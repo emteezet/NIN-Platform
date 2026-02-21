@@ -1,0 +1,123 @@
+"use client";
+
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { useAuth } from "./AuthContext";
+
+export default function Sidebar() {
+  const [isOpen, setIsOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // On desktop, always keep sidebar open
+      if (!mobile) {
+        setIsOpen(true);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const menuItems = [
+    { name: "Dashboard", href: "/dashboard", icon: "📊" },
+    { name: "Services", href: "/services", icon: "🔒" },
+    { name: "Wallet", href: "/wallet", icon: "💳" },
+    { name: "Transaction", href: "/transactions", icon: "📈" },
+    { name: "Account Info", href: "/account-info", icon: "👤" },
+  ];
+
+  const isActive = (href) => pathname === href;
+
+  return (
+    <>
+      {/* Sidebar */}
+      <aside
+        className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 transition-all duration-300 ease-in-out md:translate-x-0"
+        style={{
+          background: "var(--bg-card)",
+          borderRight: "1px solid var(--border-color)",
+          transform: isMobile
+            ? isOpen
+              ? "translateX(0)"
+              : "translateX(-100%)"
+            : "translateX(0)",
+          zIndex: 40,
+        }}
+      >
+        <nav className="h-full flex flex-col p-4 space-y-2 overflow-y-auto">
+          {menuItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => {
+                // Close sidebar only on mobile when a link is clicked
+                if (isMobile) {
+                  setIsOpen(false);
+                }
+              }}
+              className={`px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm font-medium`}
+              style={{
+                background: isActive(item.href)
+                  ? "linear-gradient(135deg, rgba(13, 107, 13, 0.15), rgba(26, 140, 26, 0.1))"
+                  : "transparent",
+                color: isActive(item.href)
+                  ? "#0d6b0d"
+                  : "var(--text-secondary)",
+                borderLeft: isActive(item.href)
+                  ? "3px solid #0d6b0d"
+                  : "3px solid transparent",
+                paddingLeft: isActive(item.href) ? "13px" : "16px",
+              }}
+            >
+              <span className="text-lg">{item.icon}</span>
+              <span>{item.name}</span>
+            </Link>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Mobile Toggle Button - Show on mobile only when authenticated */}
+      {isMobile && isAuthenticated && (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="fixed left-4 top-20 z-50 md:hidden p-2 rounded-lg transition-colors"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-color)",
+            color: "var(--text-primary)",
+          }}
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className={`transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+      )}
+
+      {/* Mobile Overlay */}
+      {isMobile && isOpen && (
+        <div
+          className="fixed inset-0 top-16 md:hidden"
+          style={{ background: "rgba(0, 0, 0, 0.5)", zIndex: 30 }}
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
+  );
+}
