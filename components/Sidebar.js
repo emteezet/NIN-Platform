@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
@@ -21,10 +21,8 @@ export default function Sidebar() {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      // On desktop, always keep sidebar open
-      if (!mobile) {
-        setIsOpen(true);
-      }
+      // On desktop, always keep sidebar open; on mobile, keep it closed
+      setIsOpen(!mobile);
     };
 
     handleResize();
