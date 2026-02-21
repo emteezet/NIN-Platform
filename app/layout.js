@@ -25,7 +25,9 @@ export default function RootLayout({ children }) {
           <Navbar />
           <div className="flex flex-1 relative w-full">
             <Sidebar />
-            <main className="flex-1 w-full md:ml-64 md:px-8">{children}</main>
+            <main className="flex-1 w-full md:px-8" id="main-content">
+              {children}
+            </main>
           </div>
           <Footer />
         </Providers>

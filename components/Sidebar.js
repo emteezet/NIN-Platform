@@ -11,6 +11,11 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
 
+  // Don't show sidebar if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
   // Handle responsive behavior
   useEffect(() => {
     const handleResize = () => {
