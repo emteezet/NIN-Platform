@@ -104,8 +104,10 @@ export default function VerifyBVNPage() {
           </p>
           <Link
             href="/verify-bvn"
-            className="text-sm font-medium"
-            style={{ color: "#0d6b0d" }}
+            className="px-4 py-2 rounded-lg font-medium text-white block"
+            style={{
+              background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)",
+            }}
           >
             Try Again
           </Link>

@@ -9,6 +9,7 @@ export default function VerifyNINPage() {
   const [slipType, setSlipType] = useState("improved");
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleNinChange = (e) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 11);
@@ -16,7 +17,7 @@ export default function VerifyNINPage() {
     setError("");
   };
 
-  const handleVerify = (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
 
     if (!nin) {
@@ -39,8 +40,16 @@ export default function VerifyNINPage() {
       return;
     }
 
-    // Navigate to verification result page with slip type as query parameter
-    router.push(`/verify/${nin}?slipType=${slipType}`);
+    setLoading(true);
+    setError("");
+
+    try {
+      // Navigate to verification result page with slip type as query parameter
+      router.push(`/verify/${nin}?slipType=${slipType}`);
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -168,25 +177,72 @@ export default function VerifyNINPage() {
             {/* Error Message */}
             {error && (
               <div
-                className="p-3 rounded-lg text-sm"
+                className="p-4 rounded-lg text-sm flex gap-3 animate-in"
                 style={{
                   background: "rgba(239, 68, 68, 0.1)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
                   color: "#dc2626",
                 }}
               >
-                {error}
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="flex-shrink-0"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4m0 4h.01" />
+                </svg>
+                <span>{error}</span>
               </div>
             )}
 
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-2 rounded-lg font-medium text-white transition-all"
+              disabled={loading}
+              className="w-full py-2 rounded-lg font-medium text-white transition-all duration-200 flex items-center justify-center gap-2"
               style={{
-                background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)",
+                background: loading
+                  ? "linear-gradient(135deg, #0d6b0d, #1a8c1a)"
+                  : "linear-gradient(135deg, #0d6b0d, #1a8c1a)",
+                opacity: loading ? 0.8 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
               }}
             >
-              Verify NIN
+              {loading ? (
+                <>
+                  <span
+                    className="spinner"
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      borderWidth: "2px",
+                      borderTopColor: "white",
+                      borderColor: "rgba(255,255,255,0.2)",
+                    }}
+                  />
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M9 11l3 3L22 4" />
+                    <path d="M20.84 4.61a2.5 2.5 0 0 0-3.54 0l-5.83 5.83a2.5 2.5 0 0 0 0 3.54" />
+                  </svg>
+                  Verify NIN
+                </>
+              )}
             </button>
           </form>
         </div>

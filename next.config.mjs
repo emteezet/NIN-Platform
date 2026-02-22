@@ -5,9 +5,7 @@ const nextConfig = {
     remotePatterns: [],
   },
   // Needed for PDFKit to work in API routes
-  experimental: {
-    serverComponentsExternalPackages: ['pdfkit'],
-  },
+  serverExternalPackages: ["pdfkit"],
 };
 
 export default nextConfig;

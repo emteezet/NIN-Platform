@@ -58,8 +58,8 @@ export default function InputForm({ onSubmit, loading }) {
             </div>
 
             {error && (
-                <p className="mt-3 text-sm text-red-500 flex items-center gap-1.5">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <p className="mt-3 text-sm flex items-center gap-1.5 animate-in" style={{ color: '#dc2626' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 8v4m0 4h.01" />
                     </svg>
@@ -70,11 +70,15 @@ export default function InputForm({ onSubmit, loading }) {
             <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full mt-4 flex items-center justify-center gap-2"
+                className="btn-primary w-full mt-4 flex items-center justify-center gap-2 transition-all duration-200"
+                style={{
+                    opacity: loading ? 0.8 : 1,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                }}
             >
                 {loading ? (
                     <>
-                        <span className="spinner" />
+                        <span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
                         Generating...
                     </>
                 ) : (

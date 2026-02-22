@@ -62,9 +62,15 @@ export default function VerifyPage() {
   if (error) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
-        <div className="glass-card p-8 text-center max-w-md">
+        <div
+          className="glass-card p-8 text-center max-w-md rounded-xl animate-in"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-color)",
+          }}
+        >
           <div
-            className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+            className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center animate-in"
             style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
           >
             <svg
@@ -88,9 +94,23 @@ export default function VerifyPage() {
           >
             Verification Failed
           </h2>
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+          <p
+            className="text-sm mb-6"
+            style={{ color: "var(--text-secondary)" }}
+          >
             {error}
           </p>
+
+          {/* Action Buttons */}
+          <Link
+            href="/verify"
+            className="px-4 py-2 rounded-lg font-medium text-white transition-all text-center block"
+            style={{
+              background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)",
+            }}
+          >
+            Try Another NIN
+          </Link>
         </div>
       </div>
     );
