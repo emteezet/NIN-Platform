@@ -49,70 +49,8 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Account Information Card */}
+        {/* Account Information Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Profile Card */}
-          <div
-            className="glass-card p-6 rounded-xl"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-color)",
-            }}
-          >
-            <h2
-              className="text-xl font-semibold mb-4"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Profile Information
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Email
-                </p>
-                <p
-                  className="font-medium"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {user.email}
-                </p>
-              </div>
-              <div>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Name
-                </p>
-                <p
-                  className="font-medium"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : "Not set"}
-                </p>
-              </div>
-              <div>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Member Since
-                </p>
-                <p
-                  className="font-medium"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {new Date().toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Account Balance Card */}
           <div
             className="glass-card p-6 rounded-xl"
@@ -147,6 +85,66 @@ export default function DashboardPage() {
               >
                 Add Funds
               </button>
+            </div>
+          </div>
+
+          {/* Account Details Card */}
+          <div
+            className="glass-card p-6 rounded-xl"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <h2
+              className="text-xl font-semibold mb-4"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Account Details
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Account Number
+                </p>
+                <p
+                  className="font-medium text-sm"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {user.accountNumber || "Not set"}
+                </p>
+              </div>
+              <div>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Account Name
+                </p>
+                <p
+                  className="font-medium text-sm"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {user.accountName || "Not set"}
+                </p>
+              </div>
+              <div>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Bank Name
+                </p>
+                <p
+                  className="font-medium text-sm"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {user.bankName || "Not set"}
+                </p>
+              </div>
             </div>
           </div>
         </div>

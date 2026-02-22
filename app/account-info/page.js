@@ -137,7 +137,7 @@ export default function AccountInfoPage() {
             </div>
           </div>
 
-          {/* Account Status Card */}
+          {/* Account Details Card */}
           <div
             className="glass-card p-6 rounded-xl"
             style={{
@@ -149,7 +149,7 @@ export default function AccountInfoPage() {
               className="text-xl font-semibold mb-6"
               style={{ color: "var(--text-primary)" }}
             >
-              Account Status
+              Account Details
             </h2>
             <div className="space-y-4">
               <div>
@@ -157,10 +157,13 @@ export default function AccountInfoPage() {
                   className="text-sm"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  Status
+                  Account Number
                 </p>
-                <p className="font-medium mt-1" style={{ color: "#0d6b0d" }}>
-                  Active
+                <p
+                  className="font-medium mt-1"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {user.accountNumber || "Not provided"}
                 </p>
               </div>
               <div>
@@ -168,13 +171,13 @@ export default function AccountInfoPage() {
                   className="text-sm"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  Account Type
+                  Account Name
                 </p>
                 <p
                   className="font-medium mt-1"
                   style={{ color: "var(--text-primary)" }}
                 >
-                  Premium
+                  {user.accountName || "Not provided"}
                 </p>
               </div>
               <div>
@@ -182,13 +185,13 @@ export default function AccountInfoPage() {
                   className="text-sm"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  Member Since
+                  Bank Name
                 </p>
                 <p
                   className="font-medium mt-1"
                   style={{ color: "var(--text-primary)" }}
                 >
-                  {new Date().toLocaleDateString()}
+                  {user.bankName || "Not provided"}
                 </p>
               </div>
             </div>

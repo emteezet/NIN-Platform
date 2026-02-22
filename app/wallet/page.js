@@ -55,67 +55,8 @@ export default function WalletPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Account Details Card */}
-          <div
-            className="md:col-span-2 glass-card p-6 rounded-xl"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-color)",
-            }}
-          >
-            <h2
-              className="text-xl font-semibold mb-6"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Account Details
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Account Holder
-                </p>
-                <p
-                  className="font-medium"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.email}
-                </p>
-              </div>
-              <div>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Email Address
-                </p>
-                <p
-                  className="font-medium"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {user.email}
-                </p>
-              </div>
-              <div>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Account Status
-                </p>
-                <p className="font-medium" style={{ color: "#0d6b0d" }}>
-                  Active
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Balance Card */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Account Balance Card */}
           <div
             className="glass-card p-6 rounded-xl"
             style={{
@@ -140,6 +81,66 @@ export default function WalletPage() {
             >
               Add Funds
             </button>
+          </div>
+
+          {/* Account Details Card */}
+          <div
+            className="glass-card p-6 rounded-xl"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <h2
+              className="text-xl font-semibold mb-4"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Account Details
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Account Number
+                </p>
+                <p
+                  className="font-medium text-sm"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {user.accountNumber || "Not set"}
+                </p>
+              </div>
+              <div>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Account Name
+                </p>
+                <p
+                  className="font-medium text-sm"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {user.accountName || "Not set"}
+                </p>
+              </div>
+              <div>
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Bank Name
+                </p>
+                <p
+                  className="font-medium text-sm"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {user.bankName || "Not set"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
