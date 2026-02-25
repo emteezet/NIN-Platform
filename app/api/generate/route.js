@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import User from '@/lib/models/User';
-import Slip from '@/lib/models/Slip';
+import { supabase } from '@/src/lib/supabase/client';
 import { generatePDF } from '@/lib/utils/generatePDF';
 import { generateQR } from '@/lib/utils/generateQR';
-import { generateSerial } from '@/lib/utils/serial';
 
 export async function POST(request) {
     try {
-        await connectDB();
-
         const body = await request.json();
         const { query } = body;
 
@@ -23,13 +18,12 @@ export async function POST(request) {
 
         const sanitized = query.trim();
 
-        // Determine if NIN or phone and validate
-        let searchQuery;
+        // Determine search filter
+        let filter = '';
         if (/^\d{11}$/.test(sanitized)) {
-            // Could be NIN or phone — search both
-            searchQuery = { $or: [{ nin: sanitized }, { phone: sanitized }] };
+            filter = `nin.eq.${sanitized},phone.eq.${sanitized}`;
         } else if (/^0\d{10}$/.test(sanitized)) {
-            searchQuery = { phone: sanitized };
+            filter = `phone.eq.${sanitized}`;
         } else {
             return NextResponse.json(
                 { error: 'Invalid input. NIN must be 11 digits. Phone must be 11 digits starting with 0.' },
@@ -37,10 +31,15 @@ export async function POST(request) {
             );
         }
 
-        // Find user
-        const user = await User.findOne(searchQuery).lean();
+        // Find user in Registry
+        const { data: user, error: userError } = await supabase
+            .from('registry')
+            .select('*')
+            .or(filter)
+            .single();
 
-        if (!user) {
+        if (userError || !user) {
+            console.error('Registry lookup error:', userError);
             return NextResponse.json(
                 { error: 'Record not found. Please check your NIN or phone number.' },
                 { status: 404 }
@@ -53,29 +52,34 @@ export async function POST(request) {
         // Generate PDF
         const { buffer: pdfBuffer, serialNumber } = await generatePDF(user);
 
-        // Track the slip generation
-        await Slip.create({
-            nin: user.nin,
-            serialNumber,
-            userId: user._id,
-        });
+        // Track the slip generation in Supabase
+        const { error: slipError } = await supabase
+            .from('slips')
+            .insert({
+                nin: user.nin,
+                serial_number: serialNumber,
+                // userId: ... (optional: could get from session if needed)
+            });
+
+        if (slipError) {
+            console.error('Slip tracking error:', slipError);
+        }
 
         // Convert PDF buffer to base64
         const pdfBase64 = pdfBuffer.toString('base64');
 
-        // Format user for frontend (don't expose DB internals)
+        // Format user for frontend
         const userData = {
             nin: user.nin,
             phone: user.phone,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            middleName: user.middleName || '',
+            firstName: user.first_name,
+            lastName: user.last_name,
+            middleName: user.middle_name || '',
             dob: user.dob,
             gender: user.gender,
             state: user.state,
             lga: user.lga,
             photo: user.photo,
-            createdAt: user.createdAt,
         };
 
         return NextResponse.json({

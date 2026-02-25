@@ -1,28 +1,29 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import User from '@/lib/models/User';
+import { supabase } from '@/src/lib/supabase/client';
 
-// GET — List all users
+// GET — List all registry users
 export async function GET() {
     try {
-        await connectDB();
-        const users = await User.find({})
-            .sort({ createdAt: -1 })
-            .lean();
+        const { data: users, error } = await supabase
+            .from('registry')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
 
         const sanitized = users.map((u) => ({
-            id: u._id.toString(),
+            id: u.id,
             nin: u.nin,
             phone: u.phone,
-            firstName: u.firstName,
-            lastName: u.lastName,
-            middleName: u.middleName || '',
+            firstName: u.first_name,
+            lastName: u.last_name,
+            middleName: u.middle_name || '',
             gender: u.gender,
             state: u.state,
             lga: u.lga,
             dob: u.dob,
             photo: u.photo,
-            createdAt: u.createdAt,
+            createdAt: u.created_at,
         }));
 
         return NextResponse.json({ success: true, users: sanitized });
@@ -32,10 +33,9 @@ export async function GET() {
     }
 }
 
-// POST — Add new user
+// POST — Add new registry user
 export async function POST(request) {
     try {
-        await connectDB();
         const body = await request.json();
 
         // Validate required fields
@@ -57,8 +57,13 @@ export async function POST(request) {
             );
         }
 
-        // Check if NIN already exists
-        const existing = await User.findOne({ nin: body.nin });
+        // Check if NIN already exists in Registry
+        const { data: existing } = await supabase
+            .from('registry')
+            .select('id')
+            .eq('nin', body.nin)
+            .maybeSingle();
+
         if (existing) {
             return NextResponse.json(
                 { error: 'A user with this NIN already exists.' },
@@ -66,26 +71,32 @@ export async function POST(request) {
             );
         }
 
-        const user = await User.create({
-            nin: body.nin,
-            phone: body.phone,
-            firstName: body.firstName,
-            lastName: body.lastName,
-            middleName: body.middleName || '',
-            dob: new Date(body.dob),
-            gender: body.gender,
-            state: body.state,
-            lga: body.lga,
-            photo: body.photo || '/uploads/default-avatar.png',
-        });
+        const { data: user, error } = await supabase
+            .from('registry')
+            .insert({
+                nin: body.nin,
+                phone: body.phone,
+                first_name: body.firstName,
+                last_name: body.lastName,
+                middle_name: body.middleName || '',
+                dob: body.dob,
+                gender: body.gender,
+                state: body.state,
+                lga: body.lga,
+                photo: body.photo || '/uploads/default-avatar.png',
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
 
         return NextResponse.json({
             success: true,
             user: {
-                id: user._id.toString(),
+                id: user.id,
                 nin: user.nin,
-                firstName: user.firstName,
-                lastName: user.lastName,
+                firstName: user.first_name,
+                lastName: user.last_name,
             },
         }, { status: 201 });
     } catch (err) {
@@ -94,10 +105,9 @@ export async function POST(request) {
     }
 }
 
-// DELETE — Remove user by ID
+// DELETE — Remove registry user by ID
 export async function DELETE(request) {
     try {
-        await connectDB();
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
@@ -105,10 +115,12 @@ export async function DELETE(request) {
             return NextResponse.json({ error: 'User ID is required.' }, { status: 400 });
         }
 
-        const deleted = await User.findByIdAndDelete(id);
-        if (!deleted) {
-            return NextResponse.json({ error: 'User not found.' }, { status: 404 });
-        }
+        const { error } = await supabase
+            .from('registry')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
 
         return NextResponse.json({ success: true, message: 'User deleted.' });
     } catch (err) {

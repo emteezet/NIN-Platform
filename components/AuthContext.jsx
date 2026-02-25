@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/src/lib/supabase/client";
 
 const AuthContext = createContext();
 
@@ -10,23 +11,41 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Check if user is logged in on mount
   useEffect(() => {
-    const checkAuth = () => {
-      try {
-        const userStr = localStorage.getItem("user");
-        if (userStr) {
-          setUser(JSON.parse(userStr));
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        localStorage.removeItem("user");
-      } finally {
-        setLoading(false);
+    // Get initial session
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email,
+          firstName: session.user.user_metadata?.first_name,
+          lastName: session.user.user_metadata?.last_name,
+        });
       }
+      setLoading(false);
     };
 
-    checkAuth();
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email,
+          firstName: session.user.user_metadata?.first_name,
+          lastName: session.user.user_metadata?.last_name,
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signup = async (
@@ -37,23 +56,22 @@ export function AuthProvider({ children }) {
     lastName,
   ) => {
     try {
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          confirmPassword,
-          firstName,
-          lastName,
-        }),
+      if (password !== confirmPassword) {
+        throw new Error("Passwords do not match");
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Signup failed");
-      }
+      if (error) throw error;
 
       return { success: true, user: data.user };
     } catch (error) {
@@ -63,21 +81,12 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed");
-      }
-
-      // Store user in localStorage
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
+      if (error) throw error;
 
       return { success: true, user: data.user };
     } catch (error) {
@@ -87,13 +96,8 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      localStorage.removeItem("user");
-      setUser(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       router.push("/");
       return { success: true };
     } catch (error) {

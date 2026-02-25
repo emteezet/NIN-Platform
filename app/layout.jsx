@@ -1,7 +1,4 @@
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
-import Footer from "@/components/Footer";
 import Providers from "@/components/Providers";
 
 export const metadata = {
@@ -22,14 +19,7 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen flex flex-col">
         <Providers>
-          <Navbar />
-          <div className="flex flex-1 relative w-full">
-            <Sidebar />
-            <main className="flex-1 w-full md:px-8" id="main-content">
-              {children}
-            </main>
-          </div>
-          <Footer />
+          {children}
         </Providers>
       </body>
     </html>

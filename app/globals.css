@@ -14,8 +14,8 @@
     --accent-green: #0d6b0d;
     --accent-green-light: #d5ecd5;
     --accent-green-glow: rgba(13, 107, 13, 0.12);
-    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.06);
-    --shadow-card-hover: 0 8px 40px rgba(0, 0, 0, 0.12);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+    --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 
   .dark {
@@ -29,8 +29,8 @@
     --accent-green: #3da33d;
     --accent-green-light: #0d3d0d;
     --accent-green-glow: rgba(61, 163, 61, 0.15);
-    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
-    --shadow-card-hover: 0 8px 40px rgba(0, 0, 0, 0.5);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   * {
@@ -55,17 +55,20 @@
 }
 
 @layer components {
+
   /* ── Glass Card Effect ── */
   .glass-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 10;
   }
 
   .glass-card:hover {
-    box-shadow: var(--shadow-card-hover);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
     transform: translateY(-2px);
   }
 
@@ -83,19 +86,19 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(
-      circle at 30% 50%,
-      rgba(255, 255, 255, 0.05) 0%,
-      transparent 50%
-    );
+    background: radial-gradient(circle at 30% 50%,
+        rgba(255, 255, 255, 0.05) 0%,
+        transparent 50%);
     animation: shimmer 15s ease-in-out infinite;
   }
 
   @keyframes shimmer {
+
     0%,
     100% {
       transform: translate(0, 0);
     }
+
     50% {
       transform: translate(5%, 5%);
     }
@@ -260,6 +263,7 @@
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -269,12 +273,15 @@
   .animate-delay-1 {
     animation-delay: 0.1s;
   }
+
   .animate-delay-2 {
     animation-delay: 0.2s;
   }
+
   .animate-delay-3 {
     animation-delay: 0.3s;
   }
+
   .animate-delay-4 {
     animation-delay: 0.4s;
   }
@@ -306,8 +313,9 @@
 
   /* ── Main content margin when sidebar exists ── */
   @media (min-width: 768px) {
-    .flex:has(> aside) > main {
-      margin-left: 16rem; /* 256px / 16 = 16rem */
+    .flex:has(> aside)>main {
+      margin-left: 16rem;
+      /* 256px / 16 = 16rem */
     }
   }
 }

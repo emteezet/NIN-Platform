@@ -32,9 +32,8 @@ export default function Sidebar() {
       name: "Services",
       icon: "🔒",
       subItems: [
-        { name: "Generate Slip", href: "/" },
         { name: "Verify NIN", href: "/verify" },
-        { name: "Verify BVN", href: "/verify-bvn" },
+        { name: "Verify BVN", href: "/verify?type=bvn" },
       ],
     },
     { name: "Wallet", href: "/wallet", icon: "💳" },
@@ -95,9 +94,8 @@ export default function Sidebar() {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className={`transition-transform duration-300 ${
-                        servicesOpen ? "rotate-180" : ""
-                      }`}
+                      className={`transition-transform duration-300 ${servicesOpen ? "rotate-180" : ""
+                        }`}
                     >
                       <path d="M6 9l6 6 6-6" />
                     </svg>

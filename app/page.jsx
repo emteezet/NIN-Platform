@@ -1,182 +1,112 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import InputForm from '@/components/InputForm';
+import React from "react";
+import Link from "next/link";
+import { useAuth } from "@/components/AuthContext";
+import { Shield, CreditCard, FileText, Fingerprint, Search } from "lucide-react";
 
 export default function HomePage() {
-    const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    const handleSubmit = async (query) => {
-        setLoading(true);
-        setError('');
-
-        try {
-            const res = await fetch('/api/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.error || 'Something went wrong. Please try again.');
-                setLoading(false);
-                return;
-            }
-
-            // Store result in sessionStorage for the generate page
-            sessionStorage.setItem('nin-result', JSON.stringify(data));
-            router.push('/generate');
-        } catch (err) {
-            setError('Network error. Please check your connection and try again.');
-            setLoading(false);
-        }
-    };
+    const { isAuthenticated } = useAuth();
 
     return (
-        <div className="min-h-[85vh] flex flex-col">
-            {/* Hero Section */}
-            <section className="gradient-hero flex-1 flex items-center justify-center px-4 py-20">
-                <div className="text-center max-w-2xl mx-auto">
+        <main className="min-h-screen bg-white selection:bg-[#008751]/20">
+            {/* Navigation */}
+            <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-[#008751] rounded-lg flex items-center justify-center text-white font-bold">N</div>
+                    <span className="font-bold text-xl tracking-tight text-[#008751]">NINPlatform</span>
+                </div>
+                <div className="flex items-center gap-6">
+                    <Link href="/auth/login" className="text-sm font-semibold text-slate-600 hover:text-[#008751] transition-colors">Login</Link>
+                    <Link
+                        href={isAuthenticated ? "/dashboard" : "/auth/signup"}
+                        className="bg-[#008751] text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-[#008751]/20 hover:bg-[#007043] transition-all"
+                    >
+                        {isAuthenticated ? "Dashboard" : "Get Started"}
+                    </Link>
+                </div>
+            </nav>
+
+            <div className="pt-32 pb-20 px-4">
+                <div className="max-w-6xl mx-auto text-center">
                     {/* Badge */}
-                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-8 animate-in">
-                        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                        <span className="text-green-100 text-xs font-medium tracking-wide">
-                            Third-Party Simulation Platform
+                    <div className="inline-flex items-center gap-2 bg-[#008751]/5 border border-[#008751]/10 rounded-full px-4 py-1.5 mb-8">
+                        <span className="w-2 h-2 rounded-full bg-[#008751] animate-pulse" />
+                        <span className="text-[#008751] text-xs font-bold tracking-wide uppercase">
+                            Secure Simulation Platform
                         </span>
                     </div>
 
-                    <h1
-                        className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6 animate-in animate-delay-1"
-                        style={{ fontFamily: 'Outfit, sans-serif' }}
-                    >
-                        NIN Slip &{' '}
-                        <span className="bg-gradient-to-r from-green-200 to-green-400 bg-clip-text text-transparent">
-                            ID Card
-                        </span>{' '}
-                        Generator
+                    <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tighter text-slate-900 mb-6 leading-[1.05]">
+                        Generate your NIN Slip <br />
+                        <span className="text-[#008751]">in seconds.</span>
                     </h1>
 
-                    <p className="text-green-100/80 text-lg mb-10 max-w-lg mx-auto animate-in animate-delay-2">
-                        Generate your National Identification Number slip and preview your
-                        plastic ID card instantly.
+                    <p className="text-slate-500 text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed">
+                        The professional way to verify your identity and generate official-standard NIN slips and Premium Digital IDs. Secure, fast, and high-fidelity.
                     </p>
 
-                    {/* Search Card */}
-                    <div
-                        className="glass-card p-8 max-w-lg mx-auto animate-in animate-delay-3"
-                        style={{
-                            background: 'var(--bg-card)',
-                            border: '1px solid var(--border-color)',
-                        }}
-                    >
-                        <InputForm onSubmit={handleSubmit} loading={loading} />
-
-                        {error && (
-                            <div
-                                className="mt-4 p-4 rounded-xl text-sm flex items-start gap-3"
-                                style={{
-                                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                                    color: '#ef4444',
-                                    border: '1px solid rgba(239, 68, 68, 0.15)',
-                                }}
-                            >
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    className="flex-shrink-0 mt-0.5"
-                                >
-                                    <circle cx="12" cy="12" r="10" />
-                                    <path d="M12 8v4m0 4h.01" />
-                                </svg>
-                                {error}
-                            </div>
-                        )}
+                    <div className="flex flex-col sm:flex-row justify-center gap-4 mb-20">
+                        <Link
+                            href={isAuthenticated ? "/dashboard/verify" : "/auth/login"}
+                            className="px-10 py-5 bg-[#008751] text-white rounded-2xl font-black text-lg shadow-2xl shadow-[#008751]/30 hover:bg-[#007043] hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
+                        >
+                            <Search className="h-6 w-6" />
+                            Verify My NIN
+                        </Link>
+                        <Link
+                            href="/auth/signup"
+                            className="px-10 py-5 bg-white text-slate-900 border-2 border-slate-100 rounded-2xl font-black text-lg hover:border-slate-200 hover:bg-slate-50 transition-all"
+                        >
+                            Sign Up Free
+                        </Link>
                     </div>
 
-                    {/* Sample NINs */}
-                    <div className="mt-8 animate-in animate-delay-4">
-                        <p className="text-green-200/50 text-xs mb-3">Try sample NINs:</p>
-                        <div className="flex flex-wrap justify-center gap-2">
-                            {['12345678901', '23456789012', '34567890123'].map((nin) => (
-                                <button
-                                    key={nin}
-                                    onClick={() => {
-                                        document.querySelector('input').value = nin;
-                                        document.querySelector('input').dispatchEvent(
-                                            new Event('input', { bubbles: true })
-                                        );
-                                        handleSubmit(nin);
-                                    }}
-                                    className="px-3 py-1.5 rounded-lg text-xs font-mono transition-all hover:scale-105"
-                                    style={{
-                                        background: 'rgba(255,255,255,0.08)',
-                                        color: 'rgba(255,255,255,0.7)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                    }}
-                                >
-                                    {nin}
-                                </button>
-                            ))}
+                    {/* Trusted Indicators */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto opacity-50 contrast-0 grayscale">
+                        <div className="flex justify-center items-center font-black text-2xl italic tracking-tighter">NIMC</div>
+                        <div className="flex justify-center items-center font-black text-2xl italic tracking-tighter">FEDERAL</div>
+                        <div className="flex justify-center items-center font-black text-2xl italic tracking-tighter">REPUBLIC</div>
+                        <div className="flex justify-center items-center font-black text-2xl italic tracking-tighter">NIGERIA</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Features Section */}
+            <section className="py-24 bg-[#f8fafc] border-t border-slate-100">
+                <div className="max-w-6xl mx-auto px-6">
+                    <div className="grid md:grid-cols-3 gap-12">
+                        <div className="space-y-4">
+                            <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-[#008751]">
+                                <FileText className="h-7 w-7" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900">Standard Slips</h3>
+                            <p className="text-slate-500 leading-relaxed">Generate the official vertical NIN slip format, perfect for printing and all government validations.</p>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-[#008751]">
+                                <CreditCard className="h-7 w-7" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900">Premium IDs</h3>
+                            <p className="text-slate-500 leading-relaxed">Get a modern landscape digital ID preview with QR code integration and high-fidelity aesthetics.</p>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-[#008751]">
+                                <Fingerprint className="h-7 w-7" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900">Secure Retrieval</h3>
+                            <p className="text-slate-500 leading-relaxed">End-to-end encrypted verification process ensuring your personal information is protected at all times.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Features Section */}
-            <section className="py-16 px-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                <div className="max-w-5xl mx-auto">
-                    <h2
-                        className="text-2xl font-bold text-center mb-10"
-                        style={{ color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}
-                    >
-                        How It Works
-                    </h2>
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {[
-                            {
-                                icon: '🔍',
-                                title: 'Enter NIN or Phone',
-                                desc: 'Input your 11-digit National Identification Number or registered phone number.',
-                            },
-                            {
-                                icon: '⚡',
-                                title: 'Instant Generation',
-                                desc: 'The system retrieves your record and generates a professional PDF slip immediately.',
-                            },
-                            {
-                                icon: '📥',
-                                title: 'Download & Verify',
-                                desc: 'Download your slip, view your ID card preview, and verify via QR code.',
-                            },
-                        ].map((feature, i) => (
-                            <div
-                                key={i}
-                                className="glass-card p-6 text-center"
-                            >
-                                <div className="text-3xl mb-4">{feature.icon}</div>
-                                <h3
-                                    className="font-semibold text-base mb-2"
-                                    style={{ color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}
-                                >
-                                    {feature.title}
-                                </h3>
-                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                    {feature.desc}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-        </div>
+            {/* Footer */}
+            <footer className="py-12 border-t border-slate-100 text-center">
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">
+                    © 2026 NINPlatform | Secure Identity Systems
+                </p>
+            </footer>
+        </main>
     );
 }

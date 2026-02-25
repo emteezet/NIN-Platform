@@ -7,17 +7,23 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "node scripts/seed.js"
+    "seed": "node --env-file=.env.local scripts/seed-supabase.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
     "@tailwindcss/postcss": "^4.2.0",
-    "bcryptjs": "^2.4.3",
-    "mongoose": "^8.9.5",
+    "clsx": "^2.1.1",
+    "crypto-js": "^4.2.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.0",
+    "lucide-react": "^0.575.0",
     "next": "^16.1.6",
     "pdfkit": "^0.15.1",
     "qrcode": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.5.0",
     "uuid": "^11.0.5"
   },
   "devDependencies": {

@@ -30,11 +30,13 @@ export async function POST(req) {
       );
     }
 
+    console.log("Signup attempt for:", email);
     await connectDB();
 
     // Check if user exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
+      console.log("Signup failed: User already exists");
       return NextResponse.json(
         { error: "Email already registered" },
         { status: 400 },
@@ -43,6 +45,7 @@ export async function POST(req) {
 
     // Hash password
     const hashedPassword = await bcryptjs.hash(password, 10);
+    console.log("Password hashed successfully");
 
     // Create user
     const user = await User.create({
@@ -51,6 +54,7 @@ export async function POST(req) {
       firstName: firstName || "",
       lastName: lastName || "",
     });
+    console.log("User created in MongoDB:", user._id);
 
     // Don't return password
     const userResponse = {
@@ -65,7 +69,7 @@ export async function POST(req) {
       { status: 201 },
     );
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("Signup error details:", error);
     return NextResponse.json(
       { error: "Signup failed. Please try again." },
       { status: 500 },
