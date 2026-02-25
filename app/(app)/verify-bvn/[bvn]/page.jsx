@@ -1,11 +1,10 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import InputForm from "@/components/InputForm";
+import { Loader2 } from "lucide-react";
 
-export default function VerifyBVNPage() {
+function BVNContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,13 +48,7 @@ export default function VerifyBVNPage() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
         <div className="text-center">
-          <div
-            className="w-8 h-8 border-4 rounded-full animate-spin mx-auto mb-4"
-            style={{
-              borderColor: "var(--border-color)",
-              borderTopColor: "#0d6b0d",
-            }}
-          />
+          <Loader2 className="w-8 h-8 animate-spin text-accent-green mx-auto mb-4" />
           <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
             Verifying BVN...
           </p>
@@ -160,12 +153,12 @@ export default function VerifyBVNPage() {
   const bankDetails = data.bankDetails || {};
   const verifiedDate = data.verifiedAt
     ? new Date(data.verifiedAt).toLocaleDateString("en-NG", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "N/A";
 
   return (
@@ -418,3 +411,17 @@ export default function VerifyBVNPage() {
     </div>
   );
 }
+
+export default function VerifyBVNPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[80vh] flex items-center justify-center text-center">
+        <Loader2 className="w-10 h-10 animate-spin text-accent-green mx-auto mb-4" />
+        <p className="text-text-muted">Loading verification details...</p>
+      </div>
+    }>
+      <BVNContent />
+    </Suspense>
+  );
+}
+

@@ -1,10 +1,9 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
-export default function VerifyPage() {
+function VerifyContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slipType = searchParams.get("slipType") || "improved";
@@ -42,15 +41,7 @@ export default function VerifyPage() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
         <div className="text-center">
-          <div
-            className="spinner mx-auto mb-4"
-            style={{
-              borderTopColor: "var(--accent-green)",
-              borderColor: "var(--border-color)",
-              width: "40px",
-              height: "40px",
-            }}
-          />
+          <Loader2 className="w-10 h-10 animate-spin text-accent-green mx-auto mb-4" />
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             Verifying NIN...
           </p>
@@ -129,12 +120,12 @@ export default function VerifyPage() {
 
   const generatedDate = data.lastGenerated
     ? new Date(data.lastGenerated).toLocaleDateString("en-NG", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "N/A";
 
   return (
@@ -329,3 +320,17 @@ function VerifyField({ label, value }) {
     </div>
   );
 }
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[80vh] flex items-center justify-center text-center">
+        <Loader2 className="w-10 h-10 animate-spin text-accent-green mx-auto mb-4" />
+        <p className="text-text-muted">Loading verification details...</p>
+      </div>
+    }>
+      <VerifyContent />
+    </Suspense>
+  );
+}
+
