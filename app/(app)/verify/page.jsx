@@ -171,7 +171,7 @@ function HubContent() {
               key={value}
               onClick={() => handleServiceSwitch(value)}
               className={`flex-1 flex items-center justify-center gap-2 py-4 text-sm font-bold transition-all ${serviceType === value
-                ? "text-accent-green border-b-2 border-accent-green"
+                ? "text-accent-green border-b-4 border-green-800"
                 : "text-text-muted hover:text-text-secondary bg-bg-secondary/30"
                 }`}
             >
@@ -198,8 +198,8 @@ function HubContent() {
                   style={
                     searchTab === value
                       ? {
-                        background: "var(--bg-card)",
-                        color: "var(--accent-green)",
+                        background: "var(--accent-green)",
+                        color: "white",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
                       }
                       : { color: "var(--text-muted)" }

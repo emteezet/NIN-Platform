@@ -48,7 +48,7 @@ export default function IdentityRequestForm({ userId }) {
                                 setValue("");
                             }}
                             className={`px-6 py-2.5 rounded-lg font-medium transition-all ${identityType === type
-                                ? "bg-accent-green text-white shadow-md shadow-accent-green/20"
+                                ? "bg-green-700 text-white shadow-md shadow-accent-green/20"
                                 : "text-text-muted hover:text-text-primary"
                                 }`}
                         >
