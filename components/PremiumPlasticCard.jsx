@@ -57,15 +57,19 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
             height: 280px;
             cursor: pointer;
             position: relative;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .premium-card-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
         }
-        .premium-card-container:hover .premium-card-inner, 
+        /* Only flip based on React state to ensure consistency across devices */
         .premium-card-inner.is-flipped {
             transform: rotateY(180deg);
         }
@@ -117,10 +121,10 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
                         <img src="/premium.svg" className="absolute inset-0 w-full h-full object-cover" alt="" />
                         
                         {/* Header Text (simulated) */}
-                        <div className="absolute top-[18px] left-[150px] transform -translate-x-1/2 text-[12px] font-black text-[#006400] whitespace-nowrap">
+                        <div className="absolute top-[18px] left-[150px] transform -translate-x-1/2 text-[15px] font-black text-[#006400] whitespace-nowrap">
                             FEDERAL REPUBLIC OF NIGERIA
                         </div>
-                        <div className="absolute top-[32px] left-[100px] transform -translate-x-1/2 text-[10px] font-bold text-slate-800 uppercase tracking-tighter">
+                        <div className="absolute top-[35px] left-[95px] transform -translate-x-1/2 text-[13px] font-bold text-slate-800 uppercase tracking-tighter">
                             Digital NIN Slip
                         </div>
 
@@ -144,17 +148,17 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
                         <div className="premium-label top-[165px] left-[140px]">Date of Birth</div>
                         <div className="premium-value top-[180px] left-[140px]">{formatDOB(user?.dob) || "15 MAY 1990"}</div>
 
-                        <div className="premium-label top-[165px] left-[230px]">Sex/Sexe</div>
-                        <div className="premium-value top-[180px] left-[230px]">{user?.gender?.charAt(0) || "M"}</div>
+                        <div className="premium-label top-[165px] left-[260px]">Sex/Sexe</div>
+                        <div className="premium-value top-[180px] left-[260px]">{user?.gender?.charAt(0) || "M"}</div>
 
                         <div className="premium-label top-[165px] right-[40px] text-[16px] font-black text-slate-400 opacity-50">NGA</div>
 
-                        <div className="premium-label top-[185px] right-[40px] font-black text-[9px]">Issue Date</div>
-                        <div className="premium-value top-[198px] right-[40px] text-[10px] whitespace-nowrap text-right">{formatIssueDate()}</div>
+                        <div className="premium-label top-[175px] right-[40px] font-bold text-[10px]">Issue Date</div>
+                        <div className="premium-value top-[188px] right-[40px] text-[10px] font-light whitespace-nowrap text-right">{formatIssueDate()}</div>
 
                         {/* NIN Display */}
-                        <div className="absolute top-[215px] left-[140px] text-[10px] text-slate-500 font-bold uppercase z-10">National Identification Number (NIN)</div>
-                        <div className="absolute top-[228px] left-[35px] text-[36px] font-black tracking-[0.2em] text-black z-10">
+                        <div className="absolute top-[215px] left-0 w-full text-center text-[10px] text-slate-500 font-bold uppercase z-10">National Identification Number (NIN)</div>
+                        <div className="absolute top-[228px] left-0 w-full text-center text-[36px] font-black tracking-[0.2em] text-black z-10">
                             {formatNIN(user?.nin) || "0000 0000 000"}
                         </div>
                     </div>
@@ -165,8 +169,8 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
                     </div>
                 </div>
                 
-                <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 animate-pulse group-hover:hidden">
-                    Click card to flip
+                <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 animate-pulse">
+                    {isFlipped ? "Tap to view front" : "Tap to view back"}
                 </p>
             </div>
         </div>
