@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+import NinForm from "@/components/NinForm";
 import { Loader2 } from "lucide-react";
 
 function BVNContent() {
@@ -135,9 +136,9 @@ function BVNContent() {
               border: "1px solid var(--border-color)",
             }}
           >
-            <InputForm
-              onSearch={(bvn) => {
-                router.push(`/verify-bvn/${bvn}`);
+            <NinForm
+              onSubmit={(value) => {
+                router.push(`/verify-bvn/${value}`);
               }}
               placeholder="11-digit BVN"
               buttonText="Verify BVN"
