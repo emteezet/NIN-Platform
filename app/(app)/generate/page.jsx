@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import SlipTemplate from '@/components/SlipTemplate';
+
 import { CheckCircle2, Search, ArrowLeft } from 'lucide-react';
 
 export default function GeneratePage() {
@@ -76,7 +76,7 @@ export default function GeneratePage() {
                 {/* Master Component */}
                 <div className="bg-white p-1 sm:p-2 rounded-[3.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50">
                     <div className="p-6 md:p-12">
-                         <SlipTemplate user={result.user} serialNumber={result.serialNumber} />
+                         {/* Slip display removed as requested */}
                     </div>
                 </div>
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import NinForm from "@/components/NinForm";
-import SlipTemplate from "@/components/SlipTemplate";
+
 import { Shield, Fingerprint, Info, Loader2 } from "lucide-react";
 
 export default function DashboardVerifyPage() {
@@ -92,7 +92,7 @@ export default function DashboardVerifyPage() {
                     {/* Result Section */}
                     {userData && (
                         <div className="animate-in fade-in slide-in-from-bottom-5 duration-700">
-                            <SlipTemplate user={userData} serialNumber={`SIM-${Math.floor(100000 + Math.random() * 900000)}`} />
+                             {/* Slip display removed as requested */}
                         </div>
                     )}
                 </div>

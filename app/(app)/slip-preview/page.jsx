@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import SlipTemplate from "@/components/SlipTemplate";
+
 
 export default function SlipPreviewPage() {
   const [showPreview, setShowPreview] = useState(true);
@@ -252,7 +252,7 @@ export default function SlipPreviewPage() {
 
           {/* Preview Panel */}
           <div className="lg:col-span-3">
-            <SlipTemplate userData={sampleData} serialNumber={serialNumber} />
+            {/* Slip display removed as requested */}
           </div>
         </div>
 
