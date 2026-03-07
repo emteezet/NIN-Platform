@@ -3,14 +3,15 @@
 import React, { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
-export default function PremiumPlasticCard({ userData, qrCodeData, forwardedRef }) {
+export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
     const [qrImage, setQrImage] = useState("");
+    const [isFlipped, setIsFlipped] = useState(false);
 
     useEffect(() => {
         const generateQR = async () => {
-            if (qrCodeData || userData?.nin) {
+            if (qrCodeData || user?.nin) {
                 try {
-                    const qrDataUrl = await QRCode.toDataURL(qrCodeData || `NIN:${userData?.nin}`, {
+                    const qrDataUrl = await QRCode.toDataURL(qrCodeData || `NIN:${user?.nin}`, {
                         width: 150,
                         margin: 0,
                         color: {
@@ -25,11 +26,11 @@ export default function PremiumPlasticCard({ userData, qrCodeData, forwardedRef 
             }
         };
         generateQR();
-    }, [qrCodeData, userData]);
+    }, [qrCodeData, user]);
 
     const formatNIN = (nin) => {
         if (!nin) return "";
-        return nin.replace(/(\d{4})(\d{4})(\d{3})/g, "$1 $2 $3");
+        return nin.replace(/(\d{4})(\d{4})(\d{3})/, "$1 $2 $3");
     };
 
     const formatDOB = (dob) => {
@@ -49,116 +50,121 @@ export default function PremiumPlasticCard({ userData, qrCodeData, forwardedRef 
         }).toUpperCase();
     };
 
-    const fullName = [userData?.firstName, userData?.middleName].filter(Boolean).join(" ");
+    const cardStyles = `
+        .premium-card-container {
+            perspective: 1000px;
+            width: 450px;
+            height: 280px;
+            cursor: pointer;
+            position: relative;
+        }
+        .premium-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .premium-card-container:hover .premium-card-inner, 
+        .premium-card-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .premium-card-front, .premium-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            background-color: white;
+            -webkit-print-color-adjust: exact;
+        }
+        .premium-card-back {
+            transform: rotateY(180deg);
+        }
+        .premium-label {
+            position: absolute;
+            font-size: 8px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .premium-value {
+            position: absolute;
+            font-size: 13px;
+            color: #000;
+            font-weight: 800;
+            font-family: Arial, sans-serif;
+        }
+    `;
 
     return (
-        <div
-            ref={forwardedRef}
-            className="flex flex-col items-center justify-center w-full"
-        >
-            <div
-                id="premium-slip-template"
-                className="relative shadow-xl overflow-hidden font-sans"
-                style={{
-                    width: "100%",
-                    maxWidth: "800px",      // Arbitrary responsive max width
-                    aspectRatio: "545.85 / 165.74", // The exact ratio of front and back combined
-                    backgroundColor: "#fff",
-                }}
+        <div className="flex flex-col items-center">
+            <style>{cardStyles}</style>
+            <div 
+                ref={forwardedRef}
+                className="premium-card-container group" 
+                onClick={() => setIsFlipped(!isFlipped)}
             >
-                {/* The Base SVG Background Image */}
-                <img
-                    src="/NIN-Premium Plastic.svg"
-                    alt="Premium Plastic NIN Template"
-                    className="absolute max-w-none pointer-events-none"
-                    style={{
-                        // Scale and shift the original SVG so the two cards perfectly fill the container
-                        // Original SVG viewBox 0 0 595.28 841.89
-                        // Target Box: x: 35.87, y: 26.81, w: 510, h: 165.74
-                        width: `${(595.28 / 510) * 100}%`,
-                        top: `${-(26.81 / 165.74) * 100}%`,
-                        left: `${-(35.87 / 510) * 100}%`,
-                    }}
-                />
-
-                {/* --- FRONT CARD OVERLAYS --- */}
-                {/* Width of front card is half of total width: 50% */}
-                <div className="absolute top-0 left-0 w-1/2 h-full z-10">
-
-                    {/* USER PHOTO */}
-                    <div
-                        className="absolute rounded overflow-hidden shadow-sm"
-                        style={{
-                            top: '28%', left: '4%', width: '22%', height: '48%',
-                            backgroundColor: 'rgba(255,255,255,0.7)'
-                        }}
-                    >
-                        <img
-                            src={userData?.photo || "/placeholder-user.jpg"}
-                            alt="User"
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.target.src = "/placeholder-user.jpg"; }}
-                        />
-                    </div>
-
-                    {/* QR CODE */}
-                    {qrImage && (
-                        <div
-                            className="absolute bg-white p-1 rounded shadow-sm flex items-center justify-center"
-                            style={{
-                                top: '11%', left: '72%', width: '24%', aspectRatio: '1/1'
-                            }}
-                        >
-                            <img src={qrImage} alt="QR Code" className="w-full h-full object-contain" />
+                <div className={`premium-card-inner ${isFlipped ? 'is-flipped' : ''}`}>
+                    {/* Front of card */}
+                    <div className="premium-card-front">
+                        {/* Background SVG */}
+                        <img src="/premium.svg" className="absolute inset-0 w-full h-full object-cover" alt="" />
+                        
+                        {/* Header Text (simulated) */}
+                        <div className="absolute top-[18px] left-[150px] transform -translate-x-1/2 text-[12px] font-black text-[#006400] whitespace-nowrap">
+                            FEDERAL REPUBLIC OF NIGERIA
                         </div>
-                    )}
+                        <div className="absolute top-[32px] left-[100px] transform -translate-x-1/2 text-[10px] font-bold text-slate-800 uppercase tracking-tighter">
+                            Digital NIN Slip
+                        </div>
 
-                    {/* DYNAMIC TEXT FIELDS */}
+                        {/* Photo */}
+                        <div className="absolute top-[75px] left-[30px] w-[90px] h-[110px] bg-slate-100 border border-slate-200 overflow-hidden">
+                            {user?.photo && <img src={user.photo} className="w-full h-full object-cover" alt="User" />}
+                        </div>
 
-                    {/* SURNAME */}
-                    <div className="absolute text-black font-bold uppercase tracking-wider" style={{ top: '35%', left: '30%', fontSize: '1.8cqw' }}>
-                        {userData?.lastName || "---"}
+                        {/* QR Code */}
+                        <div className="absolute top-[20px] right-[20px] w-[90px] h-[100px] bg-white p-1 flex items-center justify-center">
+                            {qrImage && <img src={qrImage} className="w-full h-full object-contain" alt="QR" />}
+                        </div>
+
+                        {/* Data Fields */}
+                        <div className="premium-label top-[85px] left-[140px]">Surname/Nom</div>
+                        <div className="premium-value top-[100px] left-[140px]">{user?.lastName}</div>
+
+                        <div className="premium-label top-[125px] left-[140px]">Given Names/Prenoms</div>
+                        <div className="premium-value top-[140px] left-[140px]">{user?.firstName} {user?.middleName}</div>
+
+                        <div className="premium-label top-[165px] left-[140px]">Date of Birth</div>
+                        <div className="premium-value top-[180px] left-[140px]">{formatDOB(user?.dob)}</div>
+
+                        <div className="premium-label top-[165px] left-[230px]">Sex/Sexe</div>
+                        <div className="premium-value top-[180px] left-[230px]">{user?.gender?.charAt(0)}</div>
+
+                        <div className="premium-label top-[165px] right-[40px] text-[16px] font-black text-slate-400 opacity-50">NGA</div>
+
+                        <div className="premium-label top-[185px] right-[40px] font-black text-[9px]">Issue Date</div>
+                        <div className="premium-value top-[198px] right-[40px] text-[10px] whitespace-nowrap">{formatIssueDate()}</div>
+
+                        {/* NIN Display */}
+                        <div className="absolute top-[215px] left-[140px] text-[10px] text-slate-500 font-bold uppercase">National Identification Number (NIN)</div>
+                        <div className="absolute top-[228px] left-[35px] text-[36px] font-black tracking-[0.2em] text-black">
+                            {formatNIN(user?.nin)}
+                        </div>
                     </div>
 
-                    {/* GIVEN NAMES */}
-                    <div className="absolute text-black font-bold uppercase tracking-wider" style={{ top: '50%', left: '30%', fontSize: '1.8cqw' }}>
-                        {fullName || "---"}
+                    {/* Back of card */}
+                    <div className="premium-card-back">
+                        <img src="/premiumback.svg" className="w-full h-full object-cover" alt="Card back" />
                     </div>
-
-                    {/* NATIONALITY */}
-                    <div className="absolute text-black font-black tracking-widest text-[#2f3583]" style={{ top: '48%', left: '80%', fontSize: '2cqw', color: '#131e5d' }}>
-                        NGA
-                    </div>
-
-                    {/* DATE OF BIRTH */}
-                    <div className="absolute text-black font-bold uppercase tracking-wider" style={{ top: '65%', left: '30%', fontSize: '1.3cqw' }}>
-                        {formatDOB(userData?.dob)}
-                    </div>
-
-                    {/* SEX */}
-                    <div className="absolute text-black font-bold uppercase tracking-wider" style={{ top: '65%', left: '55%', fontSize: '1.3cqw' }}>
-                        {userData?.gender === "MALE" ? "MALE" : userData?.gender === "FEMALE" ? "FEMALE" : "-"}
-                    </div>
-
-                    {/* ISSUE DATE */}
-                    <div className="absolute text-black font-bold uppercase tracking-wider" style={{ top: '65%', left: '72%', fontSize: '1.3cqw' }}>
-                        {formatIssueDate()}
-                    </div>
-
-                    {/* NIN */}
-                    <div className="absolute text-black font-black tracking-widest" style={{ top: '82%', left: '20%', fontSize: '3.5cqw' }}>
-                        {formatNIN(userData?.nin) || "0000 000 0000"}
-                    </div>
-
                 </div>
-
-                {/* --- BACK CARD OVERLAYS --- */}
-                {/* Width of back card is the right half: 50% */}
-                <div className="absolute top-0 right-0 w-1/2 h-full z-10">
-
-                    {/* Usually the serial number/tracking ID is at the bottom right or back. If it's missing in the picture, we skip or add it. */}
-
-                </div>
+                
+                <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 animate-pulse group-hover:hidden">
+                    Click card to flip
+                </p>
             </div>
         </div>
     );

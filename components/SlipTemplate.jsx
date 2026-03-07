@@ -1,81 +1,55 @@
 "use client";
 
-import { useRef, useState } from "react";
-import NinCard from "./NinCard";
+import { useRef } from "react";
+import PremiumPlasticCard from "./PremiumPlasticCard";
 import DownloadButton from "./DownloadButton";
 
-export default function SlipTemplate({ userData = {}, serialNumber = "" }) {
-  const [slipType, setSlipType] = useState("full");
-  const cardRef = useRef(null);
+export default function SlipTemplate({ user = {}, serialNumber = "" }) {
+  const documentRef = useRef(null);
 
-  // Generate QR data based on NIN and tracking ID
-  const qrCodeData = userData?.nin || "https://nin-generator.demo";
+  const qrCodeData = user?.nin ? `NIN:${user.nin}` : "";
 
   return (
-    <div className="w-full">
-      {/* Type Selector */}
-      <div className="mb-6 flex gap-4 items-center">
-        <label
-          className="text-sm font-medium"
-          style={{ color: "var(--text-primary)" }}
-        >
-          Slip Type:
-        </label>
-        <div className="flex gap-3">
-          {[
-            { value: "full", label: "Full Slip" },
-            { value: "premium", label: "Premium Digital" },
-          ].map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setSlipType(option.value)}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 font-medium text-sm`}
-              style={{
-                background:
-                  slipType === option.value
-                    ? "linear-gradient(135deg, #0d6b0d, #1a8c1a)"
-                    : "var(--bg-secondary)",
-                color:
-                  slipType === option.value ? "white" : "var(--text-secondary)",
-                border:
-                  slipType === option.value
-                    ? "none"
-                    : "1px solid var(--border-color)",
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+    <div className="w-full space-y-10">
+      {/* Header Info */}
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Your Premium Identity Card</h2>
+        <p className="text-sm font-medium text-slate-500 uppercase tracking-widest">
+           Format optimized for high-quality plastic printing
+        </p>
       </div>
 
       {/* Preview Container */}
       <div
-        className="mb-8 rounded-lg overflow-hidden"
-        style={{
-          background: "var(--bg-secondary)",
-          border: "1px solid var(--border-color)",
-          display: "flex",
-          justifyContent: "center",
-          padding: "20px",
-        }}
+        className="relative rounded-[3rem] overflow-hidden border-2 border-slate-100 bg-[#f8fafc] flex flex-col items-center justify-center py-20 px-4 min-h-[500px] shadow-inner"
       >
-        <NinCard
-          userData={userData}
-          type={slipType}
-          serialNumber={serialNumber}
-          qrCodeData={qrCodeData}
-          forwardedRef={cardRef}
-        />
+        {/* Shadow Overlay for Premium Feel */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-200/20 pointer-events-none" />
+        
+        <div className="scale-[0.6] sm:scale-[0.85] lg:scale-[1.1] transition-all duration-700 origin-center hover:scale-[1.15]">
+          <PremiumPlasticCard
+            user={user}
+            qrCodeData={qrCodeData}
+            forwardedRef={documentRef}
+          />
+        </div>
       </div>
 
-      {/* Download Button */}
-      <div className="flex justify-end">
+      {/* Action Bar */}
+      <div className="flex flex-col items-center justify-center gap-6">
         <DownloadButton
-          templateRef={cardRef}
-          fileName={`NIN-${userData?.nin || "Slip"}`}
-          slipType={slipType}
+          templateRef={documentRef}
+          fileName={`${user?.lastName || "NIN"}-Premium-ID`}
+          slipType="plastic"
         />
+        
+        <div className="flex items-center gap-4 text-slate-400">
+           <div className="h-px w-8 bg-slate-200" />
+           <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+             Standard ID-1 Size (85.6mm x 53.98mm)
+           </p>
+           <div className="h-px w-8 bg-slate-200" />
+        </div>
       </div>
     </div>
   );

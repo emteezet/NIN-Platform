@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import SlipPreview from '@/components/SlipPreview';
-import CardPreview from '@/components/CardPreview';
+import SlipTemplate from '@/components/SlipTemplate';
+import { CheckCircle2, Search, ArrowLeft } from 'lucide-react';
 
 export default function GeneratePage() {
     const router = useRouter();
@@ -25,28 +25,10 @@ export default function GeneratePage() {
     if (!result) {
         return (
             <div className="min-h-[80vh] flex items-center justify-center">
-                <div className="spinner" style={{ borderTopColor: 'var(--accent-green)', borderColor: 'var(--border-color)' }} />
+                <div className="w-12 h-12 border-4 border-[#008751]/20 border-t-[#008751] rounded-full animate-spin" />
             </div>
         );
     }
-
-    const handleDownload = () => {
-        const link = document.createElement('a');
-        link.href = `data:application/pdf;base64,${result.pdf}`;
-        link.download = `NIN-Slip-${result.user.nin}.pdf`;
-        link.click();
-    };
-
-    const handlePrint = () => {
-        // Open PDF in new window for printing
-        const pdfWindow = window.open('', '_blank');
-        pdfWindow.document.write(
-            `<html><head><title>NIN Slip - ${result.user.nin}</title></head>` +
-            `<body style="margin:0"><embed width="100%" height="100%" ` +
-            `src="data:application/pdf;base64,${result.pdf}" ` +
-            `type="application/pdf"></embed></body></html>`
-        );
-    };
 
     const handleNewSearch = () => {
         sessionStorage.removeItem('nin-result');
@@ -54,119 +36,86 @@ export default function GeneratePage() {
     };
 
     return (
-        <div className="min-h-[80vh] py-8 px-4">
+        <div className="min-h-screen py-12 px-4 bg-[#f8fafc]">
             <div className="max-w-5xl mx-auto">
-                {/* Back button */}
+                {/* Navigation */}
                 <button
                     onClick={handleNewSearch}
-                    className="flex items-center gap-2 text-sm font-medium mb-6 transition-colors"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="flex items-center gap-2 text-sm font-bold mb-8 text-slate-500 hover:text-[#008751] transition-colors group"
                 >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                    </svg>
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                     New Search
                 </button>
 
-                {/* Success Header */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 animate-in">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
                     <div>
-                        <div className="badge-valid mb-2">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M20 6L9 17l-5-5" />
-                            </svg>
-                            Record Found
+                        <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest mb-3">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Record Verified
                         </div>
-                        <h1
-                            className="text-2xl font-bold"
-                            style={{ color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}
-                        >
-                            NIN Slip Generated
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+                            Identity Secured.
                         </h1>
-                        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                            Serial: {result.serialNumber}
+                        <p className="text-slate-500 font-medium mt-1">
+                            Your official documents have been generated successfully.
                         </p>
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex gap-3 no-print">
-                        <button onClick={handleDownload} className="btn-primary flex items-center gap-2 text-sm">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                            </svg>
-                            Download PDF
-                        </button>
-                        <button onClick={handlePrint} className="btn-secondary flex items-center gap-2 text-sm">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2" />
-                                <rect x="6" y="14" width="12" height="8" />
-                            </svg>
-                            Print
-                        </button>
+                    <div className="flex bg-white p-4 rounded-2xl border border-slate-100 shadow-sm items-center gap-4">
+                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center">
+                            <Search className="w-5 h-5 text-slate-400" />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Serial Number</p>
+                           <p className="font-bold text-slate-900">{result.serialNumber}</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Content Grid */}
-                <div className="grid lg:grid-cols-2 gap-8">
-                    {/* Slip Preview */}
-                    <div>
-                        <SlipPreview
-                            user={result.user}
-                            qrCode={result.qrCode}
-                            serialNumber={result.serialNumber}
-                            generatedAt={result.generatedAt}
-                        />
+                {/* Master Component */}
+                <div className="bg-white p-1 sm:p-2 rounded-[3.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50">
+                    <div className="p-6 md:p-12">
+                         <SlipTemplate user={result.user} serialNumber={result.serialNumber} />
+                    </div>
+                </div>
+
+                {/* Verification Summary */}
+                <div className="mt-12 grid sm:grid-cols-2 gap-6">
+                    <div className="bg-[#008751] p-8 rounded-[2.5rem] text-white overflow-hidden relative group">
+                        <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full group-hover:scale-110 transition-transform duration-700" />
+                        <h3 className="text-xl font-bold mb-2">Verification URL</h3>
+                        <p className="text-emerald-100/70 text-sm mb-6 leading-relaxed">
+                            Use this permanent link to verify this identity record at any time.
+                        </p>
+                        <div className="flex items-center gap-2 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-white/10 text-xs font-mono truncate">
+                             <span className="truncate flex-1">
+                                {typeof window !== 'undefined' ? window.location.origin : ''}/verify/{result.user.nin}
+                             </span>
+                             <button 
+                                onClick={() => navigator.clipboard.writeText(`${window.location.origin}/verify/${result.user.nin}`)}
+                                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                             >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                                </svg>
+                             </button>
+                        </div>
                     </div>
 
-                    {/* Card Preview */}
-                    <div>
-                        <CardPreview
-                            user={result.user}
-                            qrCode={result.qrCode}
-                            serialNumber={result.serialNumber}
-                            generatedAt={result.generatedAt}
-                        />
-
-                        {/* Verify Link */}
-                        <div
-                            className="glass-card p-5 mt-6 animate-in animate-delay-3"
-                        >
-                            <h3
-                                className="text-sm font-semibold mb-2 flex items-center gap-2"
-                                style={{ color: 'var(--text-primary)' }}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Verification
-                            </h3>
-                            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-                                Share this link to verify the NIN slip:
-                            </p>
-                            <div
-                                className="flex items-center gap-2 p-3 rounded-lg text-xs font-mono"
-                                style={{
-                                    backgroundColor: 'var(--bg-secondary)',
-                                    color: 'var(--accent-green)',
-                                    border: '1px solid var(--border-color)',
-                                }}
-                            >
-                                <span className="truncate flex-1">
-                                    {typeof window !== 'undefined' ? window.location.origin : ''}/verify/{result.user.nin}
-                                </span>
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(`${window.location.origin}/verify/${result.user.nin}`);
-                                    }}
-                                    className="flex-shrink-0 p-1.5 rounded-md transition-colors hover:bg-white/10"
-                                    title="Copy link"
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <rect x="9" y="9" width="13" height="13" rx="2" />
-                                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                                    </svg>
-                                </button>
+                    <div className="bg-slate-900 p-8 rounded-[2.5rem] text-white">
+                        <h3 className="text-xl font-bold mb-2">Security Notice</h3>
+                        <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                            Your NIN is a sensitive record. Only share these documents with trusted entities and official verification points.
+                        </p>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                             </div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                                End-to-End Encrypted
+                            </span>
                         </div>
                     </div>
                 </div>
