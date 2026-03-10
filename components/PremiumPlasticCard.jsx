@@ -146,16 +146,16 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
 
                             {/* Data Fields */}
                             <div className="premium-label top-[85px] left-[140px]">Surname/Nom</div>
-                            <div className="premium-value top-[100px] left-[140px]">{user?.lastName || "ADEBAYO"}</div>
+                            <div className="premium-value top-[100px] left-[140px]">{user?.lastName || ""}</div>
 
                             <div className="premium-label top-[125px] left-[140px]">Given Names/Prenoms</div>
-                            <div className="premium-value top-[140px] left-[140px]">{user?.firstName || "CHUKWUMA"} {user?.middleName || ""}</div>
+                            <div className="premium-value top-[140px] left-[140px]">{user?.firstName || ""}, {user?.middleName || ""}</div>
 
                             <div className="premium-label top-[165px] left-[140px]">Date of Birth</div>
-                            <div className="premium-value top-[180px] left-[140px]">{formatDOB(user?.dob) || "15 MAY 1990"}</div>
+                            <div className="premium-value top-[180px] left-[140px]">{formatDOB(user?.dob) || ""}</div>
 
                             <div className="premium-label top-[165px] left-[260px]">Sex/Sexe</div>
-                            <div className="premium-value top-[180px] left-[260px]">{user?.gender?.charAt(0) || "M"}</div>
+                            <div className="premium-value top-[180px] left-[260px]">{user?.gender?.charAt(0) || ""}</div>
 
                             <div className="premium-label top-[165px] right-[40px] text-[16px] font-black text-slate-400 opacity-50">NGA</div>
 

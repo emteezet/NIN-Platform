@@ -5,9 +5,10 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import NinForm from "@/components/NinForm";
-import PremiumPlasticCard from "@/components/PremiumPlasticCard";
+import PlasticBvn from "@/components/PlasticBvn";
 import DownloadButton from "@/components/DownloadButton";
 import { Loader2 } from "lucide-react";
+import { getMockByBvn } from "@/lib/mockData";
 
 function BVNContent() {
   const params = useParams();
@@ -30,16 +31,32 @@ function BVNContent() {
 
     const fetchVerification = async () => {
       try {
-        const res = await fetch(`/api/verify-bvn/${params.bvn}`);
-        const json = await res.json();
-
-        if (!res.ok) {
-          setError(json.error || "BVN verification failed.");
-          setLoading(false);
-          return;
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        let mockData = getMockByBvn(params.bvn);
+        
+        if (!mockData) {
+          // Fallback to a default mock user to ensure testing always works
+          const defaultMock = getMockByBvn("33333333333");
+          mockData = {
+            ...defaultMock,
+            bvn: params.bvn,
+          };
         }
 
-        setData(json);
+        setData({
+          bvn: mockData.bvn,
+          verifiedAt: new Date().toISOString(),
+          bankDetails: {
+            accountName: `${mockData.lastName} ${mockData.firstName} ${mockData.middleName}`,
+            bankName: "Guaranty Trust Bank",
+            bankCode: "058",
+            accountNumber: "0123456789",
+            accountType: "Savings",
+          },
+          ...mockData
+        });
       } catch (err) {
         setError("Network error during verification.");
       } finally {
@@ -174,16 +191,16 @@ function BVNContent() {
         <div className="w-full max-w-lg mb-8 space-y-8 animate-in fade-in zoom-in duration-500">
            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-[3rem] border border-slate-200 shadow-xl shadow-slate-200/50">
                 <div className="scale-75 sm:scale-100 origin-center">
-                    <PremiumPlasticCard 
+                    <PlasticBvn 
                         user={{
-                            firstName: bankDetails.accountName?.split(' ')[1] || "IBRAHIM",
-                            lastName: bankDetails.accountName?.split(' ')[0] || "ADEBAYO",
-                            nin: data.bvn, // Using BVN as ID for this template
-                            gender: "M",
-                            dob: "1990-05-15",
-                            photo: "https://api.dicebear.com/7.x/avataaars/svg?seed=BVN"
+                            firstName: data.firstName || bankDetails.accountName?.split(' ')[1] || "IBRAHIM",
+                            lastName: data.lastName || bankDetails.accountName?.split(' ')[0] || "ADEBAYO",
+                            middleName: data.middleName || "",
+                            bvn: data.bvn, // Using BVN as ID for this template
+                            gender: data.gender || "M",
+                            dob: data.dob || "1990-05-15",
+                            photo: data.photo || "https://api.dicebear.com/7.x/avataaars/svg?seed=BVN"
                         }} 
-                        qrCodeData={`BVN:${data.bvn}`} 
                         forwardedRef={documentRef} 
                     />
                 </div>
@@ -194,251 +211,6 @@ function BVNContent() {
         </div>
       )}
 
-      <div className="max-w-lg w-full">
-        {/* Status */}
-        <div className="text-center mb-8">
-          <div
-            className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #d5ecd5, #eef7ee)" }}
-          >
-            <svg
-              width="40"
-              height="40"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#0d6b0d"
-              strokeWidth="2.5"
-            >
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-          </div>
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-3"
-            style={{
-              background: "rgba(13, 107, 13, 0.1)",
-              color: "#0d6b0d",
-            }}
-          >
-            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-            </svg>
-            VALID
-          </div>
-          <h1
-            className="text-2xl font-bold"
-            style={{ color: "var(--text-primary)" }}
-          >
-            BVN Verified
-          </h1>
-          <p
-            className="text-sm mt-1"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            BVN: {params.bvn}
-          </p>
-        </div>
-
-        {/* Details Card */}
-        <div
-          className="glass-card overflow-hidden"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          {/* Green bar */}
-          <div
-            className="h-1.5"
-            style={{
-              background: "linear-gradient(90deg, #0d6b0d, #1a8c1a, #0d6b0d)",
-            }}
-          />
-
-          <div className="p-6">
-            {/* Primary Info */}
-            <div
-              className="mb-6 pb-6 border-b"
-              style={{ borderColor: "var(--border-color)" }}
-            >
-              <h2
-                className="text-lg font-semibold mb-4"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Account Holder
-              </h2>
-              <div>
-                <p
-                  className="text-xs mb-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Full Name
-                </p>
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {bankDetails.accountName || "N/A"}
-                </p>
-              </div>
-            </div>
-
-            {/* Bank Details */}
-            <div
-              className="mb-6 pb-6 border-b"
-              style={{ borderColor: "var(--border-color)" }}
-            >
-              <h2
-                className="text-lg font-semibold mb-4"
-                style={{ color: "var(--text-primary)" }}
-              >
-                Bank Information
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p
-                    className="text-xs mb-1"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Bank Name
-                  </p>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {bankDetails.bankName || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p
-                    className="text-xs mb-1"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Bank Code
-                  </p>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {bankDetails.bankCode || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p
-                    className="text-xs mb-1"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Account Number
-                  </p>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {bankDetails.accountNumber || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p
-                    className="text-xs mb-1"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Account Type
-                  </p>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {bankDetails.accountType || "N/A"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Verification Details */}
-            <div
-              className="mb-6 pb-6 border-b"
-              style={{ borderColor: "var(--border-color)" }}
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p
-                    className="text-xs mb-1"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Status
-                  </p>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "#0d6b0d" }}
-                  >
-                    Active
-                  </p>
-                </div>
-                <div>
-                  <p
-                    className="text-xs mb-1"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Verified Date
-                  </p>
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {verifiedDate}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Slip Type */}
-            <div>
-              <p
-                className="text-xs mb-1"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Selected Slip Type
-              </p>
-              <p
-                className="text-sm font-medium"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {slipType === "slip"
-                  ? "BVN Slip"
-                  : "BVN Premium Slip (Plastic ID Card)"}
-              </p>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div
-            className="px-6 py-3"
-            style={{ backgroundColor: "var(--bg-secondary)" }}
-          >
-            <p
-              className="text-xs text-center"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Verified on{" "}
-              {new Date().toLocaleDateString("en-NG", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}{" "}
-              — School Project Simulation
-            </p>
-          </div>
-        </div>
-
-        <div className="text-center mt-6">
-          <Link
-            href="/services"
-            className="text-sm font-medium"
-            style={{ color: "#0d6b0d" }}
-          >
-            Back to Services
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }
