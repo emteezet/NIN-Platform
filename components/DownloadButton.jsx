@@ -22,78 +22,94 @@ export default function DownloadButton({
     try {
       const html2canvas = (await import("html2canvas")).default;
       const jsPDF = (await import("jspdf")).jsPDF;
-
       const element = templateRef.current;
 
-      // Capture logic
-      const canvas = await html2canvas(element, {
-        scale: 4, // Ultra-high resolution
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        onclone: (clonedDoc) => {
-           // Crucial: Finding the element in the cloned document
-           // and removing any scaling/transforms that might be inherited from the preview UI
-           const clonedElement = clonedDoc.body.querySelector(`[class*="premium-card-container"]`) || 
-                               clonedDoc.body.querySelector(`[ref="${templateRef?.current?.getAttribute?.('ref')}"]`) ||
-                               clonedDoc.body.querySelector('.premium-card-container');
-
-           // If we're capturing a scaled preview, we need to reset the transform on the clone
-           // so html2canvas sees the natural size.
-           const previewContainers = clonedDoc.querySelectorAll('.scale-\\[0\\.55\\], .scale-\\[0\\.75\\], .scale-\\[0\\.95\\]');
-           previewContainers.forEach(container => {
-              container.style.transform = 'none';
-              container.style.scale = '1';
-           });
-
-           // Force visible on the clone for capture
-           if (clonedElement) {
-              clonedElement.style.transform = 'none';
-              clonedElement.style.opacity = '1';
-              clonedElement.style.visibility = 'visible';
-           }
-        }
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-
-      let pdf;
-      let filename;
-
+      // ==========================================
+      // FRONTEND-ONLY A4 STACKED LOGIC
+      // ==========================================
       if (slipType === "premium" || slipType === "plastic") {
-        // ID-1 size: 85.6mm x 53.98mm
-        pdf = new jsPDF({
-          orientation: "landscape",
-          unit: "mm",
-          format: [85.6, 53.98],
-        });
-        filename = `${fileName}-Premium.pdf`;
-      } else {
-        // A4 vertical
-        pdf = new jsPDF({
+
+        // 1. Directly target the front and back elements inside the preview
+        const frontElement = element.querySelector('.premium-card-front');
+        const backElement = element.querySelector('.premium-card-back');
+
+        if (!frontElement || !backElement) {
+          throw new Error("Could not find the card faces on the screen.");
+        }
+
+        // 2. Temporarily disable the 3D flipping CSS so html2canvas can read it flat
+        const originalBackTransform = backElement.style.transform;
+        const originalBackDisplay = backElement.style.display;
+
+        backElement.style.transform = 'none'; // Un-flip the back card
+        backElement.style.display = 'block';
+
+        // 3. Take High-Res pictures of the individual elements
+        const captureOptions = { scale: 4, useCORS: true, backgroundColor: null, logging: false };
+
+        const frontCanvas = await html2canvas(frontElement, captureOptions);
+        const backCanvas = await html2canvas(backElement, captureOptions);
+
+        // 4. Restore the 3D CSS so the user's UI doesn't break
+        backElement.style.transform = originalBackTransform;
+        backElement.style.display = originalBackDisplay;
+
+        const frontImgData = frontCanvas.toDataURL("image/png");
+        const backImgData = backCanvas.toDataURL("image/png");
+
+        // 5. Create the A4 PDF Document
+        const pdf = new jsPDF({
           orientation: "portrait",
           unit: "mm",
           format: "a4",
         });
-        filename = `${fileName}-Full.pdf`;
+
+        // Standard CR80 ID Card dimensions (85.6mm x 53.98mm)
+        const cardW = 85.6;
+        const cardH = 53.98;
+
+        // Center Alignment for A4
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const xOffset = (pageWidth - cardW) / 2;
+
+        // Vertical Spacing
+        const yTop = 30; // 30mm from the top of the page
+        const gap = 15; // 15mm gap between cards
+
+        // 6. Draw Both Cards onto the A4 PDF
+        pdf.addImage(frontImgData, "PNG", xOffset, yTop, cardW, cardH);
+        pdf.addImage(backImgData, "PNG", xOffset, yTop + cardH + gap, cardW, cardH);
+
+        // 7. Force Download
+        pdf.save(`${fileName}-Print-Ready.pdf`);
+        setIsLoading(false);
+        return;
       }
+
+      // ==========================================
+      // STANDARD FULL PAGE SLIP LOGIC
+      // ==========================================
+      const canvas = await html2canvas(element, {
+        scale: 4,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-
-      const imgWidth = pageWidth;
       const imgHeight = (canvas.height * pageWidth) / canvas.width;
-
-      // Centering logic
       const yPos = (pageHeight - imgHeight) / 2;
-      
-      pdf.addImage(imgData, "PNG", 0, Math.max(0, yPos), imgWidth, imgHeight);
 
-      pdf.save(filename);
+      pdf.addImage(imgData, "PNG", 0, Math.max(0, yPos), pageWidth, imgHeight);
+      pdf.save(`${fileName}-Full.pdf`);
+
     } catch (err) {
       console.error("PDF generation error:", err);
-      setError("Failed to generate PDF. Please try again.");
+      setError("Failed to generate PDF. Check console for details.");
     } finally {
       setIsLoading(false);
     }
@@ -115,23 +131,19 @@ export default function DownloadButton({
         {isLoading ? (
           <>
             <div className="w-5 h-5 border-[3px] border-white/20 border-t-white rounded-full animate-spin" />
-            <span>Processing Identity...</span>
+            <span>Processing Print File...</span>
           </>
         ) : (
           <>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
             </svg>
-            <span className="uppercase tracking-widest text-sm">Download High-Res PDF</span>
+            <span className="uppercase tracking-widest text-sm">Download Print PDF</span>
           </>
         )}
       </button>
       {error && (
         <p className="text-[11px] text-red-500 flex items-center gap-2 font-bold px-4 py-2 bg-red-50 rounded-lg">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v4m0 4h.01" />
-          </svg>
           {error}
         </p>
       )}
