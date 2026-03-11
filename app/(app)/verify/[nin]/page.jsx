@@ -1,20 +1,23 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Download, CheckCircle2, FileText, Share2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import PremiumPlasticCard from "@/components/PremiumPlasticCard";
+import DownloadButton from "@/components/DownloadButton"; // Added the new smart button
 
 function VerifyContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slipType = searchParams.get("slipType") || "improved";
-  const [downloading, setDownloading] = useState(false);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  // 1. Create the reference for the DownloadButton to target
+  const documentRef = useRef(null); 
 
   useEffect(() => {
     const fetchVerification = async () => {
@@ -68,41 +71,24 @@ function VerifyContent() {
             className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center animate-in"
             style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
           >
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#ef4444"
-              strokeWidth="2"
-            >
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <path d="M15 9l-6 6M9 9l6 6" />
             </svg>
           </div>
           <h2
             className="text-xl font-bold mb-2"
-            style={{
-              color: "var(--text-primary)",
-              fontFamily: "Outfit, sans-serif",
-            }}
+            style={{ color: "var(--text-primary)", fontFamily: "Outfit, sans-serif" }}
           >
             Verification Failed
           </h2>
-          <p
-            className="text-sm mb-6"
-            style={{ color: "var(--text-secondary)" }}
-          >
+          <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
             {error}
           </p>
-
-          {/* Action Buttons */}
           <Link
             href="/verify"
             className="px-4 py-2 rounded-lg font-medium text-white transition-all text-center block"
-            style={{
-              background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)",
-            }}
+            style={{ background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)" }}
           >
             Try Another NIN
           </Link>
@@ -132,223 +118,106 @@ function VerifyContent() {
     })
     : "N/A";
 
-  const handleDownload = async () => {
-    setDownloading(true);
-    try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: params.nin, slipType: slipType }),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Download failed");
-
-      // Trigger download
-      const link = document.createElement('a');
-      link.href = `data:application/pdf;base64,${result.pdf}`;
-      link.download = `NIN-Slip-${params.nin}.pdf`;
-      link.click();
-    } catch (err) {
-      console.error("PDF Download error:", err);
-      alert(err.message || "Failed to download PDF. Please try again.");
-    } finally {
-      setDownloading(false);
-    }
-  };
-
   return (
     <div className="min-h-[80vh] py-8 px-4">
       <div className="max-w-lg mx-auto">
-        {/* Status */}
+        
+        {/* Status Header */}
         <div className="text-center mb-8 animate-in text-slate-900">
           <div
             className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
             style={{ background: "linear-gradient(135deg, #d5ecd5, #eef7ee)" }}
           >
-            <svg
-              width="40"
-              height="40"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#0d6b0d"
-              strokeWidth="2.5"
-            >
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0d6b0d" strokeWidth="2.5">
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
           <div className="badge-valid mx-auto mb-3">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
             VALID
           </div>
           <h1
             className="text-2xl font-bold"
-            style={{
-              color: "var(--text-primary)",
-              fontFamily: "Outfit, sans-serif",
-            }}
+            style={{ color: "var(--text-primary)", fontFamily: "Outfit, sans-serif" }}
           >
             Identity Verified
           </h1>
-          <div className="flex items-center justify-center gap-4 mt-2">
-            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              NIN: {params.nin}
-            </p>
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              className="flex items-center gap-1.5 text-xs font-bold text-white px-3 py-1.5 rounded-lg transition-all active:scale-95 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #008751, #007043)" }}
-            >
-              {downloading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Download className="w-3.5 h-3.5" />
-              )}
-              {downloading ? "Generating..." : "Download Slip"}
-            </button>
-          </div>
+          <p className="text-sm mt-2" style={{ color: "var(--text-secondary)" }}>
+            NIN: {params.nin}
+          </p>
         </div>
 
-        {/* Details Card or Premium Template */}
-        {slipType === "premium" ? (
-          <div className="mt-8 animate-in fade-in zoom-in duration-500 py-4 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-xl flex justify-center w-full">
-            <div className="w-full max-w-[800px] scale-[0.6] sm:scale-100 origin-top flex justify-center items-center">
-              <PremiumPlasticCard user={user} qrCodeData={data?.qrCode} />
-            </div>
-          </div>
-        ) : (
-          <div className="glass-card overflow-hidden animate-in animate-delay-1">
-            {/* Green bar */}
-            <div
-              className="h-1.5"
-              style={{
-                background: "linear-gradient(90deg, #0d6b0d, #1a8c1a, #0d6b0d)",
-              }}
-            />
-
-            <div className="p-6">
-              {/* Photo + Name */}
-              <div
-                className="flex items-center gap-4 mb-6 pb-6 border-b"
-                style={{ borderColor: "var(--border-color)" }}
-              >
-                <div
-                  className="w-16 h-16 rounded-xl border-2 flex items-center justify-center overflow-hidden flex-shrink-0"
-                  style={{
-                    borderColor: "var(--accent-green)",
-                    backgroundColor: "var(--bg-secondary)",
-                  }}
-                >
-                  {user.photo && user.photo !== "/uploads/default-avatar.png" ? (
-                    <img
-                      src={user.photo}
-                      alt="Photo"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <svg
-                      width="28"
-                      height="28"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  )}
+        {/* 2. Wrap the visual ID cards in the documentRef */}
+        <div ref={documentRef}>
+            {slipType === "premium" ? (
+              <div className="mt-8 animate-in fade-in zoom-in duration-500 py-4 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-xl flex justify-center w-full">
+                <div className="w-full max-w-[800px] scale-[0.6] sm:scale-100 origin-top flex justify-center items-center">
+                  <PremiumPlasticCard user={user} qrCodeData={data?.qrCode} />
                 </div>
-                <div>
-                  <h2
-                    className="text-lg font-bold"
-                    style={{
-                      color: "var(--text-primary)",
-                      fontFamily: "Outfit, sans-serif",
-                    }}
-                  >
-                    {fullName}
-                  </h2>
-                  <p
-                    className="text-sm font-mono"
-                    style={{ color: "var(--accent-green)" }}
-                  >
-                    {user.nin}
+              </div>
+            ) : (
+              <div className="glass-card overflow-hidden animate-in animate-delay-1">
+                <div className="h-1.5" style={{ background: "linear-gradient(90deg, #0d6b0d, #1a8c1a, #0d6b0d)" }} />
+                <div className="p-6">
+                  <div className="flex items-center gap-4 mb-6 pb-6 border-b" style={{ borderColor: "var(--border-color)" }}>
+                    <div className="w-16 h-16 rounded-xl border-2 flex items-center justify-center overflow-hidden flex-shrink-0" style={{ borderColor: "var(--accent-green)", backgroundColor: "var(--bg-secondary)" }}>
+                      {user.photo && user.photo !== "/uploads/default-avatar.png" ? (
+                        <img src={user.photo} alt="Photo" className="w-full h-full object-cover" />
+                      ) : (
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: "var(--text-muted)" }}>
+                          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      )}
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)", fontFamily: "Outfit, sans-serif" }}>
+                        {fullName}
+                      </h2>
+                      <p className="text-sm font-mono" style={{ color: "var(--accent-green)" }}>
+                        {user.nin}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b" style={{ borderColor: "var(--border-color)" }}>
+                    <VerifyField label="Date of Birth" value={dob} />
+                    <VerifyField label="Gender" value={user.gender} />
+                    <VerifyField label="State" value={user.state} />
+                    <VerifyField label="LGA" value={user.lga} />
+                    <VerifyField label="Last Generated" value={generatedDate} />
+                    <VerifyField label="Serial No." value={data.serialNumber || "—"} />
+                  </div>
+
+                  <div className="mb-6 pb-6 border-b" style={{ borderColor: "var(--border-color)" }}>
+                    <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>Selected Slip Type</p>
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
+                      {slipType === "improved" ? "Improved NIN Slip" : "NIN Regular Slip"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="px-6 py-3" style={{ backgroundColor: "var(--bg-secondary)" }}>
+                  <p className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+                    Verified on {new Date().toLocaleDateString("en-NG", { year: "numeric", month: "long", day: "numeric" })} — School Project Simulation
                   </p>
                 </div>
               </div>
+            )}
+        </div>
 
-              {/* Details Grid */}
-              <div
-                className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b"
-                style={{ borderColor: "var(--border-color)" }}
-              >
-                <VerifyField label="Date of Birth" value={dob} />
-                <VerifyField label="Gender" value={user.gender} />
-                <VerifyField label="State" value={user.state} />
-                <VerifyField label="LGA" value={user.lga} />
-                <VerifyField label="Last Generated" value={generatedDate} />
-                <VerifyField
-                  label="Serial No."
-                  value={data.serialNumber || "—"}
-                />
-              </div>
+        {/* 3. Drop in the new DownloadButton right under the card */}
+        <div className="mt-8 flex justify-center">
+            <DownloadButton 
+                templateRef={documentRef} 
+                fileName={`NIN-Slip-${params.nin}`} 
+                slipType={slipType === "premium" ? "premium" : "full"} 
+            />
+        </div>
 
-              {/* Slip Type */}
-              <div
-                className="mb-6 pb-6 border-b"
-                style={{ borderColor: "var(--border-color)" }}
-              >
-                <p
-                  className="text-xs mb-2"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Selected Slip Type
-                </p>
-                <p
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {slipType === "improved"
-                    ? "Improved NIN Slip"
-                    : "NIN Regular Slip"}
-                </p>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div
-              className="px-6 py-3"
-              style={{ backgroundColor: "var(--bg-secondary)" }}
-            >
-              <p
-                className="text-xs text-center"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Verified on{" "}
-                {new Date().toLocaleDateString("en-NG", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}{" "}
-                — School Project Simulation
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Back button at the bottom */}
+        {/* New Search Button */}
         <div className="mt-8 flex justify-center no-print">
           <Link
             href="/verify"
@@ -376,10 +245,7 @@ function VerifyField({ label, value }) {
       <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
         {label}
       </p>
-      <p
-        className="text-sm font-medium"
-        style={{ color: "var(--text-primary)" }}
-      >
+      <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
         {value || "—"}
       </p>
     </div>
@@ -398,4 +264,3 @@ export default function VerifyPage() {
     </Suspense>
   );
 }
-
