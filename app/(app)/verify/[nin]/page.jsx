@@ -179,7 +179,7 @@ function VerifyContent() {
                 <DownloadButton 
                     templateRef={documentRef} 
                     fileName={`NIN-Slip-${params.nin}`} 
-                    slipType={slipType === "premium" ? "plastic" : "full"} 
+                    slipType={(slipType === "premium" || slipType === "improved") ? "plastic" : "full"} 
                     renderCustom={({ onClick, isLoading, error }) => (
                         <ProfilePreview
                             user={user}

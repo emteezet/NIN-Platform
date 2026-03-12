@@ -34,36 +34,50 @@ export default function ImprovedNinSlip({ user, qrCodeData, forwardedRef }) {
 
     const formatDOB = (dob) => {
         if (!dob) return "";
-        // Extract date components directly to ensure reliable formatting
-        const date = new Date(dob);
-        const day = String(date.getDate()).padStart(2, '0');
-        const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-        const month = months[date.getMonth()];
-        const year = date.getFullYear();
-        return `${day} ${month} ${year}`;
+        return new Date(dob).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        }).toUpperCase();
     };
 
-    const slipStyles = `
-        .improved-slip-container {
+    const formatIssueDate = () => {
+        return new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+        }).toUpperCase();
+    };
+
+    const cardStyles = `
+        .improved-card-container {
             width: 450px;
             height: 280px;
             position: relative;
-            background-color: white;
-            border-radius: 8px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .improved-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .premium-card-front, .premium-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            background-color: white;
             -webkit-print-color-adjust: exact;
         }
-        .improved-label {
-            position: absolute;
-            font-size: 9px;
-            color: #555;
-            font-weight: 700;
-            z-index: 10;
+        .premium-card-back {
+            display: none; 
         }
         .improved-value {
             position: absolute;
-            font-size: 11px;
+            font-size: 13px;
             color: #000;
             font-weight: 800;
             font-family: Arial, sans-serif;
@@ -74,54 +88,53 @@ export default function ImprovedNinSlip({ user, qrCodeData, forwardedRef }) {
 
     return (
         <div className="flex flex-col items-center">
-            <style>{slipStyles}</style>
-            <div 
+            <style>{cardStyles}</style>
+            <div
                 ref={forwardedRef}
-                className="improved-slip-container"
+                className="improved-card-container"
             >
-                {/* Background Image */}
-                <img src="/improved_nin_slip.png" className="absolute inset-0 w-full h-full object-cover" alt="" />
-                
-                {/* Content Overlay */}
-                <div className="absolute inset-0">
-                    {/* Header NGA */}
-                    <div className="absolute top-[15px] right-[25px] text-[24px] font-black text-black opacity-80">NGA</div>
+                <div className="improved-card-inner">
+                    {/* Front of card */}
+                    <div className="premium-card-front">
+                        {/* Background Image */}
+                        <img src="/improved_nin_slip.png" className="absolute inset-0 w-full h-full object-cover" alt="" />
 
-                    {/* Photo Placeholder/Space */}
-                    <div className="absolute top-[70px] left-[25px] w-[85px] h-[105px] bg-slate-100 border border-slate-200 overflow-hidden z-10">
-                        {user?.photo && <img src={user.photo} crossOrigin="anonymous" className="w-full h-full object-cover" alt="User" />}
+                        <div className="absolute inset-0">
+                            {/* Header Text - Precise positioning to match background template */}
+
+
+                            {/* Photo - Centered in frame */}
+                            <div className="absolute top-[85px] left-[22px] w-[88px] h-[112px] border-[1px] border-black bg-transparent overflow-hidden z-10">
+                                {user?.photo && <img src={user.photo} crossOrigin="anonymous" className="w-full h-full object-cover" alt="User" />}
+                            </div>
+
+                            {/* QR Code - Top Right alignment */}
+                            <div className="absolute top-[45px] right-[25px] w-[75px] h-[75px] bg-white p-1 flex items-center justify-center z-10">
+                                {qrImage && <img src={qrImage} crossOrigin="anonymous" className="w-full h-full object-contain" alt="QR" />}
+                            </div>
+
+                            {/* Data Values Only - Aligned to pre-printed labels */}
+                            <div className="improved-value top-[82px] left-[115px]">{user?.lastName || ""}</div>
+
+                            <div className="improved-value top-[122px] left-[115px]">{user?.firstName || ""}, {user?.middleName || ""}</div>
+
+                            <div className="improved-value top-[162px] left-[115px]">{formatDOB(user?.dob) || ""}</div>
+
+                            <div className="improved-value top-[162px] left-[265px]">{user?.gender?.charAt(0) || ""}</div>
+
+
+
+                            {/* NIN Display - Smaller font to fit and avoid overlap */}
+
+                            <div className="absolute top-[220px] left-0 w-full text-center text-[30px] font-black tracking-[0.15em] text-black z-10">
+                                {formatNIN(user?.nin) || "0000 0000 000"}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* QR Code */}
-                    <div className="absolute top-[185px] left-[25px] w-[50px] h-[50px] bg-white p-0.5 flex items-center justify-center z-10">
-                        {qrImage && <img src={qrImage} crossOrigin="anonymous" className="w-full h-full object-contain" alt="QR" />}
-                    </div>
-
-                    {/* Fields based on improved_nin_slip.png layout */}
-                    
-                    {/* Surname */}
-                    <div className="improved-label top-[75px] left-[125px]">Surname/Nom</div>
-                    <div className="improved-value top-[90px] left-[125px] text-[13px]">{user?.lastName || ""}</div>
-
-                    {/* Given Names */}
-                    <div className="improved-label top-[115px] left-[125px]">Given Names/Prenoms</div>
-                    <div className="improved-value top-[130px] left-[125px] text-[13px]">{user?.firstName || ""} {user?.middleName || ""}</div>
-
-                    {/* Date of Birth */}
-                    <div className="improved-label top-[155px] left-[125px]">Date of Birth</div>
-                    <div className="improved-value top-[170px] left-[125px] text-[13px]">{formatDOB(user?.dob) || ""}</div>
-
-                    {/* NIN Label and Value */}
-                    <div className="absolute top-[215px] left-0 w-full text-center text-[11px] text-black font-bold uppercase z-10">
-                        National Identification Number (NIN)
-                    </div>
-                    <div className="absolute top-[230px] left-0 w-full text-center text-[22px] font-black tracking-[0.1em] text-black z-10">
-                        {formatNIN(user?.nin) || "0000 0000 000"}
-                    </div>
-
-                    {/* Footer text */}
-                    <div className="absolute bottom-[8px] w-full text-center text-[8px] font-medium italic text-black opacity-80 px-4">
-                        Kindly ensure you scan the barcode to verify the credentials
+                    {/* Back of card */}
+                    <div className="premium-card-back">
+                        <img src="/premiumback.svg" className="w-[200px] h-[280px] object-cover" alt="Card back" />
                     </div>
                 </div>
             </div>
