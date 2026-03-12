@@ -89,12 +89,12 @@ export default function ImprovedNinSlip({ user, qrCodeData, forwardedRef }) {
 
                     {/* Photo Placeholder/Space */}
                     <div className="absolute top-[70px] left-[25px] w-[85px] h-[105px] bg-slate-100 border border-slate-200 overflow-hidden z-10">
-                        {user?.photo && <img src={user.photo} className="w-full h-full object-cover" alt="User" />}
+                        {user?.photo && <img src={user.photo} crossOrigin="anonymous" className="w-full h-full object-cover" alt="User" />}
                     </div>
 
                     {/* QR Code */}
                     <div className="absolute top-[185px] left-[25px] w-[50px] h-[50px] bg-white p-0.5 flex items-center justify-center z-10">
-                        {qrImage && <img src={qrImage} className="w-full h-full object-contain" alt="QR" />}
+                        {qrImage && <img src={qrImage} crossOrigin="anonymous" className="w-full h-full object-contain" alt="QR" />}
                     </div>
 
                     {/* Fields based on improved_nin_slip.png layout */}

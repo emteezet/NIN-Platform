@@ -41,6 +41,7 @@ export default function BvnRegularSlip({ user, forwardedRef }) {
                     {/* Coat of Arms (using generic fallback since not found in public folder, but typically client has it) */}
                     <img 
                         src="/coat_of_arms.png" 
+                        crossOrigin="anonymous"
                         alt="Coat of Arms" 
                         className="w-16 h-16 object-contain"
                         onError={(e) => {
@@ -76,7 +77,7 @@ export default function BvnRegularSlip({ user, forwardedRef }) {
                     <div className="flex-1 flex flex-col items-center">
                         <div className="w-[120px] h-[140px] bg-gray-100 overflow-hidden mb-1 flex items-center justify-center border border-gray-300">
                             {user?.photo ? (
-                                <img src={user.photo} className="w-full h-full object-cover" alt="User Photo" />
+                                <img src={user.photo} crossOrigin="anonymous" className="w-full h-full object-cover" alt="User Photo" />
                             ) : (
                                 <span className="text-gray-400 text-xs">No Photo</span>
                             )}

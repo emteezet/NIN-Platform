@@ -40,6 +40,18 @@ export default function DownloadButton({
       const clonedElement = element.cloneNode(true);
       hiddenContainer.appendChild(clonedElement);
 
+      // ============================================================
+      // WAIT FOR IMAGES (Fix for Missing Photos/Backgrounds)
+      // ============================================================
+      const images = Array.from(clonedElement.getElementsByTagName('img'));
+      await Promise.all(images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve; // Continue even if one image fails
+        });
+      }));
+
       let frontCanvas, backCanvas, mainCanvas;
 
       if (slipType === "premium" || slipType === "plastic") {
@@ -57,7 +69,13 @@ export default function DownloadButton({
         backClone.style.display = 'block';
 
         // Optimizing PDF size: Reducing scale from 4 to 2 (high quality enough for print)
-        const captureOptions = { scale: 2, useCORS: true, backgroundColor: null, logging: false };
+        const captureOptions = { 
+          scale: 2, 
+          useCORS: true, 
+          allowTaint: true, // Fallback if CORS fails
+          backgroundColor: null, 
+          logging: false 
+        };
         
         frontCanvas = await html2canvas(frontClone, captureOptions);
         backCanvas = await html2canvas(backClone, captureOptions);
@@ -68,6 +86,7 @@ export default function DownloadButton({
           scale: 2,
           backgroundColor: "#ffffff",
           useCORS: true,
+          allowTaint: true, // Fallback if CORS fails
           logging: false,
           width: 850
         });

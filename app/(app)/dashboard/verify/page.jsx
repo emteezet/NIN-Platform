@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
-import UnifiedVerificationForm from "@/components/UnifiedVerificationForm";
+import NinForm from "@/components/NinForm";
 
 import PremiumPlasticCard from "@/components/PremiumPlasticCard";
 import DownloadButton from "@/components/DownloadButton";
@@ -73,7 +73,7 @@ export default function DashboardVerifyPage() {
                     {/* Input Section */}
                     <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group max-w-2xl mx-auto w-full">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-[#008751]/5 rounded-bl-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
-                        <UnifiedVerificationForm onSubmit={handleVerify} loading={loading} />
+                        <NinForm onSubmit={(query) => handleVerify({ endpoint: "/api/verify", data: { nin: query } })} loading={loading} />
 
                         {error && (
                             <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-medium flex gap-3 items-center">

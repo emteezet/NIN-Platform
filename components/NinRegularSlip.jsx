@@ -20,6 +20,7 @@ export default function NinRegularSlip({ user, forwardedRef }) {
                         {/* Coat of Arms */}
                         <img
                             src="/coat_of_arms.png"
+                            crossOrigin="anonymous"
                             alt="Coat of Arms"
                             className="w-16 h-16 object-contain"
                             onError={(e) => {
@@ -37,6 +38,7 @@ export default function NinRegularSlip({ user, forwardedRef }) {
                         {/* NIMC Logo Fallback */}
                         <img
                             src="/nimc_logo.png"
+                            crossOrigin="anonymous"
                             alt="NIMC Logo"
                             className="w-20 object-contain"
                             onError={(e) => {
@@ -115,7 +117,7 @@ export default function NinRegularSlip({ user, forwardedRef }) {
                     {/* Right Photo Column */}
                     <div className="w-[140px] border-l border-black flex items-start justify-center p-1 bg-gray-100" style={{ height: "160px" }}>
                         {user?.photo ? (
-                            <img src={user.photo} className="w-full h-full object-cover" alt="User Photo" />
+                            <img src={user.photo} crossOrigin="anonymous" className="w-full h-full object-cover" alt="User Photo" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">Photo</div>
                         )}

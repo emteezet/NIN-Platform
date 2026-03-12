@@ -5,7 +5,6 @@ import QRCode from "qrcode";
 
 export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
     const [qrImage, setQrImage] = useState("");
-    const [isFlipped, setIsFlipped] = useState(false);
 
     useEffect(() => {
         const generateQR = async () => {
@@ -52,32 +51,21 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
 
     const cardStyles = `
         .premium-card-container {
-            perspective: 1000px;
             width: 450px;
             height: 280px;
-            cursor: pointer;
             position: relative;
-            touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
         }
         .premium-card-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-style: preserve-3d;
-        }
-        /* Only flip based on React state to ensure consistency across devices */
-        .premium-card-inner.is-flipped {
-            transform: rotateY(180deg);
         }
         .premium-card-front, .premium-card-back {
             position: absolute;
             width: 100%;
             height: 100%;
-            backface-visibility: hidden;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -85,7 +73,7 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
             -webkit-print-color-adjust: exact;
         }
         .premium-card-back {
-            transform: rotateY(180deg);
+            display: none; /* Hidden on screen, will be shown manually by logic if needed */
         }
         .premium-label {
             position: absolute;
@@ -115,17 +103,16 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
             <style>{cardStyles}</style>
             <div
                 ref={forwardedRef}
-                className="premium-card-container group"
-                onClick={() => setIsFlipped(!isFlipped)}
+                className="premium-card-container"
             >
-                <div className={`premium-card-inner ${isFlipped ? 'is-flipped' : ''}`}>
+                <div className="premium-card-inner">
                     {/* Front of card */}
                     <div className="premium-card-front">
                         {/* Background SVG - Always visible on front */}
                         <img src="/premium.jpg" className="absolute inset-0 w-full h-full object-cover" alt="" />
 
                         {/* Conditional Wrapper for Data: Hides content manually when flipped to prevent mobile 'ghosting' */}
-                        <div className={`absolute inset-0 transition-opacity duration-300 ${isFlipped ? 'opacity-0' : 'opacity-100'}`}>
+                        <div className="absolute inset-0">
                             {/* Header Text (simulated) */}
                             <div className="absolute top-[18px] left-[150px] transform -translate-x-1/2 text-[15px] font-black text-[#006400] whitespace-nowrap z-10" style={{ backfaceVisibility: 'hidden' }}>
                                 FEDERAL REPUBLIC OF NIGERIA
@@ -136,12 +123,12 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
 
                             {/* Photo */}
                             <div className="absolute top-[75px] left-[30px] w-[90px] h-[110px] bg-slate-100 border border-slate-200 overflow-hidden z-10" style={{ backfaceVisibility: 'hidden' }}>
-                                {user?.photo && <img src={user.photo} className="w-full h-full object-cover" alt="User" />}
+                                {user?.photo && <img src={user.photo} crossOrigin="anonymous" className="w-full h-full object-cover" alt="User" />}
                             </div>
 
                             {/* QR Code */}
                             <div className="absolute top-[20px] right-[20px] w-[90px] h-[100px] bg-white p-1 flex items-center justify-center z-10" style={{ backfaceVisibility: 'hidden' }}>
-                                {qrImage && <img src={qrImage} className="w-full h-full object-contain" alt="QR" />}
+                                {qrImage && <img src={qrImage} crossOrigin="anonymous" className="w-full h-full object-contain" alt="QR" />}
                             </div>
 
                             {/* Data Fields */}
@@ -172,13 +159,9 @@ export default function PremiumPlasticCard({ user, qrCodeData, forwardedRef }) {
 
                     {/* Back of card */}
                     <div className="premium-card-back">
-                        <img src="/premiumback.svg" className="w-full h-full object-cover" alt="Card back" />
+                        <img src="/premiumback.svg" className="w-[200px] h-[280px] object-cover" alt="Card back" />
                     </div>
                 </div>
-
-                <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest mt-6 animate-pulse">
-                    {isFlipped ? "Tap to view front" : "Tap to view back"}
-                </p>
             </div>
         </div>
     );

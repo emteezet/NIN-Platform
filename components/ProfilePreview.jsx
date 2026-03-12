@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Fingerprint, Info, Download, Loader2, CheckCircle } from "lucide-react";
 
-export default function ProfilePreview({ 
-    user, 
-    idType = "NIN", 
-    idNumber = "", 
-    onDownload, 
+export default function ProfilePreview({
+    user,
+    idType = "NIN",
+    idNumber = "",
+    onDownload,
     isDownloading = false,
     error = ""
 }) {
@@ -38,7 +38,7 @@ export default function ProfilePreview({
     const dob = user?.dob || "N/A";
     const gender = (user?.gender || "N/A").replace('EXAMPLE_', '');
     const phone = user?.phone || user?.telephoneno || "N/A";
-    
+
     // Address Info
     const address = [user?.address || user?.residence_address || user?.residence]
         .filter(Boolean)
@@ -55,10 +55,10 @@ export default function ProfilePreview({
             {/* Header / Photo Area */}
             <div className="px-6 pt-8 pb-16 text-center relative" style={{ background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)" }}>
                 <h1 className="text-white text-[11px] font-bold opacity-90 mb-4 tracking-[0.2em] uppercase">Identity Preview</h1>
-                <img 
-                    src={photoUrl} 
-                    alt="Profile Photo" 
-                    className="w-28 h-28 rounded-full border-4 border-white shadow-md absolute left-1/2 transform -translate-x-1/2 -bottom-14 object-cover bg-gray-200" 
+                <img
+                    src={photoUrl}
+                    alt="Profile Photo"
+                    className="w-28 h-28 rounded-full border-4 border-white shadow-md absolute left-1/2 transform -translate-x-1/2 -bottom-14 object-cover bg-gray-200"
                 />
             </div>
 
@@ -104,16 +104,16 @@ export default function ProfilePreview({
                 <div className="bg-slate-50/80 rounded-xl p-4 mb-8 flex items-start gap-3 text-slate-600 border border-slate-100">
                     <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-500" />
                     <p className="text-xs leading-relaxed">
-                        This is a summarized preview. Your full address, birth history, and complete biographical details are automatically included in the downloaded high-quality PDF.
+                        This is a summarized preview, your complete details are automatically included in the downloaded high-quality PDF.
                     </p>
                 </div>
 
                 {/* Action Button */}
-                <button 
+                <button
                     onClick={onDownload}
                     disabled={isDownloading}
                     className="w-full text-white font-bold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-[0.98]"
-                    style={{ 
+                    style={{
                         background: isDownloading ? "#94a3b8" : "linear-gradient(135deg, #0d6b0d, #1a8c1a)",
                         cursor: isDownloading ? "not-allowed" : "pointer"
                     }}
@@ -130,14 +130,14 @@ export default function ProfilePreview({
                         </>
                     )}
                 </button>
-                
+
                 {showSuccess && (
                     <div className="text-center mt-4 text-green-600 text-sm font-medium flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-2">
                         <CheckCircle className="w-4 h-4" />
                         PDF Download Started!
                     </div>
                 )}
-                
+
                 {error && (
                     <div className="text-center mt-4 text-red-500 text-xs font-bold flex items-center justify-center gap-2 bg-red-50 py-2 rounded-lg">
                         <Info className="w-4 h-4" />
