@@ -126,7 +126,8 @@ export class WalletService {
                 });
 
             if (error) {
-                if (error.message.includes('no_negative_balance')) {
+                console.error('[WalletService.debitWallet] Supabase error:', JSON.stringify(error, null, 2));
+                if (error.message?.includes('no_negative_balance')) {
                     throw new WalletError("Insufficient wallet balance", ErrorCodes.INSUFFICIENT_BALANCE);
                 }
                 throw error;

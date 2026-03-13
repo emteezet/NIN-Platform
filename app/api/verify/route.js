@@ -107,6 +107,8 @@ export async function POST(request) {
             });
 
         } catch (err) {
+            console.error('[API Verify] Error object:', JSON.stringify(err, null, 2));
+            console.error('[API Verify] Error message:', err.message);
             // Handle Insufficient Balance
             if (err.message?.toLowerCase().includes('insufficient') || err.code === 'INSUFFICIENT_BALANCE') {
                 return NextResponse.json(
