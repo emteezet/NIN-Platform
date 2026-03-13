@@ -3,7 +3,9 @@
 import { useEffect, useState, Suspense, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info, Wallet } from "lucide-react";
+import { useAuth } from "@/components/AuthContext";
+import { supabase } from "@/lib/supabase/client";
 import PremiumPlasticCard from "@/components/PremiumPlasticCard";
 import NinRegularSlip from "@/components/NinRegularSlip";
 import ImprovedNinSlip from "@/components/ImprovedNinSlip";
@@ -25,18 +27,70 @@ function VerifyContent() {
   useEffect(() => {
     const fetchVerification = async () => {
       try {
-        const res = await fetch(`/api/verify/${params.nin}`);
-        const json = await res.json();
+        // 1. Check for cached result from the Hub/Dashboard
+        const cached = sessionStorage.getItem('nin-result');
+        let resultData = null;
 
-        if (!res.ok) {
-          setError(json.error || "Verification failed.");
-          setLoading(false);
-          return;
+        if (cached) {
+            try {
+                const parsed = JSON.parse(cached);
+                if (parsed.user?.nin === params.nin) {
+                    resultData = parsed;
+                }
+            } catch (e) {
+                console.error("Cache parse error", e);
+            }
         }
 
-        setData(json);
+        // 2. Fallback: Authenticate and fetch if no cache
+        if (!resultData) {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+            try {
+                const res = await fetch(`/api/verify/${params.nin}`, {
+                    headers: token ? { "Authorization": `Bearer ${token}` } : {},
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                const json = await res.json();
+
+                if (!res.ok) {
+                    const errMsg = json.error || "Verification failed.";
+                    const isInsufficient = json.code === 'INSUFFICIENT_BALANCE' || res.status === 402;
+                    
+                    throw new Error(errMsg, { cause: isInsufficient ? 'INSUFFICIENT_BALANCE' : (json.code || '') });
+                }
+                resultData = json;
+            } catch (fetchErr) {
+                if (fetchErr.name === 'AbortError') {
+                    throw new Error("Verification request timed out. Please check your connection.");
+                }
+                throw fetchErr;
+            }
+        }
+
+        // 3. Data Integrity Check
+        const identityUser = resultData.user;
+        const hasRequiredFields = identityUser && 
+            identityUser.nin && 
+            identityUser.firstName && 
+            identityUser.lastName;
+
+        if (!hasRequiredFields) {
+            throw new Error("Invalid registry data. Essential fields are missing from the record.");
+        }
+
+        setData(resultData);
       } catch (err) {
-        setError("Network error during verification.");
+        setError({ 
+            message: err.message, 
+            code: err.cause 
+        });
       } finally {
         setLoading(false);
       }
@@ -59,7 +113,6 @@ function VerifyContent() {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
@@ -86,15 +139,33 @@ function VerifyContent() {
             Verification Failed
           </h2>
           <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
-            {error}
+            {error.message}
           </p>
-          <Link
-            href="/verify"
-            className="px-4 py-2 rounded-lg font-medium text-white transition-all text-center block"
-            style={{ background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)" }}
-          >
-            Try Another NIN
-          </Link>
+          
+          {error.code === 'INSUFFICIENT_BALANCE' ? (
+              <Link
+                href="/wallet"
+                className="px-6 py-3 rounded-xl font-bold text-white transition-all text-center flex items-center justify-center gap-2 mb-3"
+                style={{ background: "#0d6b0d" }}
+              >
+                <Wallet className="w-5 h-5" />
+                Top up Wallet
+              </Link>
+          ) : (
+              <Link
+                href="/verify"
+                className="px-4 py-2 rounded-lg font-medium text-white transition-all text-center block"
+                style={{ background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)" }}
+              >
+                Try Another NIN
+              </Link>
+          )}
+
+          {error.code === 'INSUFFICIENT_BALANCE' && (
+              <Link href="/verify" className="text-xs font-bold text-slate-400 hover:text-slate-600">
+                  Try another search
+              </Link>
+          )}
         </div>
       </div>
     );

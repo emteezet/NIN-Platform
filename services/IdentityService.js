@@ -1,4 +1,3 @@
-import { MockKycProvider } from "../lib/adapters/MockKycProvider";
 import { NinBvnPortalProvider } from "../lib/adapters/NinBvnPortalProvider";
 import { walletService } from "./WalletService";
 import { encryptIdentity, maskData } from "../lib/crypto/encryption";
@@ -6,8 +5,8 @@ import { Logger } from "../lib/utils/logger";
 import { IdentityError, ErrorCodes } from "../lib/errors/AppError";
 
 const VERIFICATION_FEES = {
-    NIN: 150, // Updated based on NinBvnPortal pricing
-    BVN: 100
+    NIN: 150, // All NIN related types (lookup, phone, tracking, demography)
+    BVN: 100  // All BVN related types
 };
 
 /**
@@ -18,15 +17,13 @@ export class IdentityService {
     constructor(provider = null, walletSvc = null) {
         // Resolve provider based on environment if not explicitly provided
         if (!provider) {
-            const providerType = process.env.KYC_PROVIDER || 'mock';
+            const providerType = process.env.KYC_PROVIDER || 'ninbvnportal';
             switch (providerType.toLowerCase()) {
                 case 'ninbvnportal':
                     provider = new NinBvnPortalProvider();
                     break;
-                case 'mock':
                 default:
-                    provider = new MockKycProvider();
-                    break;
+                    throw new Error(`Invalid or unsupported KYC provider: ${providerType}`);
             }
         }
 
@@ -35,75 +32,86 @@ export class IdentityService {
     }
 
     /**
-     * Processes a NIN verification request with atomic debit
-     * @param {string} userId
-     * @param {string} nin 
-     * @returns {Promise<object>}
+     * Common handler for verification with debit
+     * @private
      */
-    async verifyNin(userId, nin) {
-        Logger.info("Initiating NIN verification", { userId, nin: maskData(nin) });
+    async _processVerification(userId, identifier, fee, type, fetchMethod) {
+        Logger.info(`Initiating ${type} verification`, { userId, identifier: maskData(identifier) });
 
         try {
-            // 1. Deduct fee first (Atomic Debit with check constraint)
-            await this.walletService.debitWallet(userId, VERIFICATION_FEES.NIN, 'NIN_VERIFY');
-
-            // 2. Fetch data from provider
-            const result = await this.provider.fetchByNin(nin);
+            // 1. Fetch data from provider first (Verification check)
+            const result = await fetchMethod();
 
             if (result.success) {
-                Logger.info("NIN verification successful", { userId, nin: maskData(nin) });
-                // NDPR: Encrypt sensitive data before returning
+                // 2. ONLY debit fee if record is found and successful
+                await this.walletService.debitWallet(userId, fee, type);
+
+                Logger.info(`${type} verification successful and debited`, { userId });
+
+                const mappedData = { ...result.data };
+                if (mappedData.nin) mappedData.nin = encryptIdentity(mappedData.nin);
+                if (mappedData.bvn) mappedData.bvn = encryptIdentity(mappedData.bvn);
+
                 return {
                     ...result,
-                    data: {
-                        ...result.data,
-                        nin: encryptIdentity(result.data.nin) // Encrypt raw NIN
-                    }
+                    data: mappedData
                 };
             }
 
-            Logger.warn("NIN verification failed by provider", { userId, error: result.error });
+            Logger.warn(`${type} verification failed by provider (No debit)`, { userId, error: result.error });
             throw new IdentityError(result.error || "Identity not found in registry", ErrorCodes.IDENTITY_NOT_FOUND);
         } catch (error) {
-            Logger.error("IdentityService NIN verification failure", error, { userId });
+            Logger.error(`IdentityService ${type} verification failure`, error, { userId });
             throw error instanceof IdentityError ? error : new IdentityError(`Verification system error: ${error.message}`);
         }
     }
 
     /**
-     * Processes a BVN verification request with atomic debit
-     * @param {string} userId
-     * @param {string} bvn 
-     * @returns {Promise<object>}
+     * Processes a NIN verification request
+     */
+    async verifyNin(userId, nin) {
+        return this._processVerification(userId, nin, VERIFICATION_FEES.NIN, 'NIN_VERIFY', () => this.provider.fetchByNin(nin));
+    }
+
+    /**
+     * Processes a NIN by Phone verification request
+     */
+    async verifyByNinPhone(userId, phone) {
+        return this._processVerification(userId, phone, VERIFICATION_FEES.NIN, 'NIN_PHONE_VERIFY', () => this.provider.fetchByNinPhone(phone));
+    }
+
+    /**
+     * Processes a NIN by Tracking ID verification request
+     */
+    async verifyByNinTracking(userId, trackingId) {
+        return this._processVerification(userId, trackingId, VERIFICATION_FEES.NIN, 'NIN_TRACKING_VERIFY', () => this.provider.fetchByNinTracking(trackingId));
+    }
+
+    /**
+     * Processes a NIN by Demography verification request
+     */
+    async verifyByNinDemography(userId, payload) {
+        // payload: { firstname, lastname, gender, dob }
+        const identifier = `${payload.firstname} ${payload.lastname}`;
+        return this._processVerification(userId, identifier, VERIFICATION_FEES.NIN, 'NIN_DEMO_VERIFY', () =>
+            this.provider.fetchByNinDemography(payload.firstname, payload.lastname, payload.gender, payload.dob)
+        );
+    }
+
+    /**
+     * Processes a BVN verification request
      */
     async verifyBvn(userId, bvn) {
-        Logger.info("Initiating BVN verification", { userId, bvn: maskData(bvn) });
+        return this._processVerification(userId, bvn, VERIFICATION_FEES.BVN, 'BVN_VERIFY', () => this.provider.fetchByBvn(bvn));
+    }
 
-        try {
-            // 1. Deduct fee
-            await this.walletService.debitWallet(userId, VERIFICATION_FEES.BVN, 'BVN_VERIFY');
-
-            const result = await this.provider.fetchByBvn(bvn);
-
-            if (result.success) {
-                Logger.info("BVN verification successful", { userId, bvn: maskData(bvn) });
-                return {
-                    ...result,
-                    data: {
-                        ...result.data,
-                        bvn: encryptIdentity(result.data.bvn) // Encrypt raw BVN
-                    }
-                };
-            }
-
-            Logger.warn("BVN verification failed by provider", { userId, error: result.error });
-            throw new IdentityError(result.error || "BVN record not found", ErrorCodes.IDENTITY_NOT_FOUND);
-        } catch (error) {
-            Logger.error("IdentityService BVN verification failure", error, { userId });
-            throw error instanceof IdentityError ? error : new IdentityError(`Verification system error: ${error.message}`);
-        }
+    /**
+     * Processes a BVN by Phone verification request
+     */
+    async verifyBvnPhone(userId, phone) {
+        return this._processVerification(userId, phone, VERIFICATION_FEES.BVN, 'BVN_PHONE_VERIFY', () => this.provider.fetchByBvnPhone(phone));
     }
 }
 
-// Export a singleton instance with Mock default
+// Export a singleton instance 
 export const identityService = new IdentityService();

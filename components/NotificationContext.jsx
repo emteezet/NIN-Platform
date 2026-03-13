@@ -23,15 +23,17 @@ export function NotificationProvider({ children }) {
     return (
         <NotificationContext.Provider value={{ showNotification }}>
             {children}
-            <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 max-w-md w-full sm:w-auto">
+            <div className="fixed z-[9999] flex flex-col gap-3 w-[calc(100%-2rem)] sm:w-96 
+                bottom-6 left-1/2 -translate-x-1/2 
+                sm:top-6 sm:bottom-auto sm:right-6 sm:left-auto sm:translate-x-0">
                 {notifications.map((n) => (
                     <div
                         key={n.id}
                         className={`flex items-start gap-3 p-4 rounded-2xl border backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-right-10 duration-300 ${n.type === "error"
-                                ? "bg-red-50/90 border-red-200 text-red-800"
-                                : n.type === "success"
-                                    ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
-                                    : "bg-blue-50/90 border-blue-200 text-blue-800"
+                            ? "bg-red-50/90 border-red-200 text-red-800"
+                            : n.type === "success"
+                                ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
+                                : "bg-blue-50/90 border-blue-200 text-blue-800"
                             }`}
                     >
                         <div className="mt-0.5">

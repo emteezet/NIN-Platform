@@ -113,7 +113,7 @@ export default function ImprovedNinSlip({ user, qrCodeData, forwardedRef }) {
 
                             {/* QR Code - Top Right alignment */}
                             <div className="absolute top-[45px] right-[25px] w-[75px] h-[75px] bg-white p-1 flex items-center justify-center z-10">
-                                {qrImage && <img src={qrImage} crossOrigin="anonymous" className="w-full h-full object-contain" alt="QR" />}
+                                {qrImage && <img src={qrImage} crossOrigin="anonymous" className="w-full h-full object-cover" alt="QR" />}
                             </div>
 
                             {/* Data Values Only - Aligned to pre-printed labels */}

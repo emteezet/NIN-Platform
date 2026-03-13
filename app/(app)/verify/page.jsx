@@ -4,8 +4,9 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Hash, Phone, CreditCard, Star, ShieldCheck,
-  ChevronRight, AlertCircle, Loader2, FileText, UserCheck
+  ChevronRight, AlertCircle, Loader2, FileText, UserCheck, Wallet
 } from "lucide-react";
+import Link from "next/link";
 
 const SERVICE_TABS = [
   { value: "nin", label: "NIN Verification", icon: ShieldCheck },
@@ -58,6 +59,11 @@ const NIN_SEARCH_TABS = [
   { value: "phone", label: "Phone Number", icon: Phone },
 ];
 
+const BVN_SEARCH_TABS = [
+  { value: "bvn", label: "BVN Number", icon: Hash },
+  { value: "phone", label: "Phone Number", icon: Phone },
+];
+
 function HubContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -80,15 +86,14 @@ function HubContent() {
     if (type === "bvn") {
       setServiceType("bvn");
       setSlipType(slip || "slip");
+      setSearchTab(searchBy === "phone" ? "phone" : "bvn");
     } else if (type === "nin") {
       setServiceType("nin");
       setSlipType(slip || "regular");
+      setSearchTab(searchBy === "phone" ? "phone" : "nin");
     }
 
     if (id) setIdValue(id);
-    if (searchBy && (searchBy === "nin" || searchBy === "phone")) {
-      setSearchTab(searchBy);
-    }
   }, [searchParams]);
 
   const handleIdChange = (e) => {
@@ -98,6 +103,7 @@ function HubContent() {
 
   const handleServiceSwitch = (type) => {
     setServiceType(type);
+    setSearchTab(type === "nin" ? "nin" : "bvn");
     setSlipType(type === "nin" ? "regular" : "slip");
     setIdValue("");
     setError("");
@@ -107,36 +113,129 @@ function HubContent() {
   const handleVerify = async (e) => {
     e.preventDefault();
 
+    const label = serviceType === "nin" 
+        ? (searchTab === "phone" ? "phone number" : "NIN")
+        : (searchTab === "phone" ? "phone number" : "BVN");
+
     if (!idValue) {
-      setError(`Please enter your ${serviceType.toUpperCase()} number`);
+      setError({ message: `Please enter your ${label}` });
       return;
     }
 
-    if (idValue.length !== 11 && (serviceType === "bvn" || searchTab === "nin")) {
-      setError(`${serviceType.toUpperCase()} must be exactly 11 digits`);
+    if (idValue.length !== 11) {
+      setError({ message: `${label} must be exactly 11 digits` });
       return;
     }
 
     if (!consent) {
-      setError("Please accept the terms and conditions");
+      setError({ message: "Please accept the terms and conditions" });
       return;
     }
 
     setLoading(true);
-    setError("");
+    setError(null);
 
     try {
-      if (serviceType === "nin") {
-        router.push(`/verify/${idValue}?slipType=${slipType}&searchBy=${searchTab}`);
-      } else {
-        router.push(`/verify-bvn/${idValue}?slipType=${slipType}`);
+      // 1. Get authentication session
+      const { supabase } = await import("@/lib/supabase/client");
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error("Authentication required. Please log in again.");
       }
-    } catch {
-      setError("An error occurred. Please try again.");
+
+      // 2. Map to correct API endpoint
+      let endpoint = "/api/verify";
+      let payload = { nin: idValue };
+
+      if (serviceType === "nin") {
+        if (searchTab === "phone") {
+          endpoint = "/api/verify-nin-phone";
+          payload = { phone: idValue };
+        } else {
+          endpoint = "/api/verify";
+          payload = { nin: idValue };
+        }
+      } else {
+        // BVN
+        if (searchTab === "phone") {
+          endpoint = "/api/verify-bvn-phone";
+          payload = { phone: idValue };
+        } else {
+          endpoint = "/api/verify-bvn";
+          payload = { bvn: idValue };
+        }
+      }
+      
+      // 3. Set up timeout (25 seconds - aggregator can be slow)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+      // 4. Perform the verification (and wallet debit)
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        const resultData = await res.json();
+
+        if (!res.ok) {
+          const err = new Error(resultData.error || "Verification failed");
+          err.cause = resultData.code;
+          throw err;
+        }
+
+        // 5. Data Integrity Check
+        const identityUser = resultData.user;
+        const hasRequiredFields = identityUser && 
+          (identityUser.nin || identityUser.bvn) && 
+          identityUser.firstName && 
+          identityUser.lastName;
+
+        if (!hasRequiredFields) {
+           throw new Error("Invalid registry data. Some essential information is missing from the official record.");
+        }
+
+        // 6. Save result for the next page to use (cache)
+        sessionStorage.setItem('nin-result', JSON.stringify({
+          ...resultData,
+          user: identityUser,
+          verifiedAt: new Date().toISOString(),
+          slipType,
+          searchBy: searchTab
+        }));
+
+        // 7. Redirect based on type
+        if (serviceType === "nin") {
+          router.push(`/verify/${identityUser.nin}?slipType=${slipType}&searchBy=${searchTab}`);
+        } else {
+          router.push(`/verify-bvn/${identityUser.bvn || identityUser.nin}?slipType=${slipType}`);
+        }
+      } catch (fetchErr) {
+        if (fetchErr.name === 'AbortError') {
+          throw new Error("Verification request timed out. The identity registry is currently slow. Please try again.");
+        }
+        throw fetchErr;
+      }
+
+    } catch (err) {
+      setError({ 
+        message: err.message, 
+        code: err.cause 
+      });
       setLoading(false);
     }
   };
 
+  const searchTabs = serviceType === "nin" ? NIN_SEARCH_TABS : BVN_SEARCH_TABS;
   const slipTypes = serviceType === "nin" ? NIN_SLIP_TYPES : BVN_SLIP_TYPES;
   const maxLen = 11;
 
@@ -183,34 +282,32 @@ function HubContent() {
 
         <form onSubmit={handleVerify} className="p-6 space-y-5 animate-in">
 
-          {/* NIN-only Search Method Tabs */}
-          {serviceType === "nin" && (
-            <div
-              className="flex p-1.5 rounded-xl gap-1 mb-4 shadow-inner"
-              style={{ background: "var(--bg-secondary)" }}
-            >
-              {NIN_SEARCH_TABS.map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => { setSearchTab(value); setIdValue(""); }}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
-                  style={
-                    searchTab === value
-                      ? {
-                        background: "var(--accent-green)",
-                        color: "white",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
-                      }
-                      : { color: "var(--text-muted)" }
-                  }
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Search Method Tabs */}
+          <div
+            className="flex p-1.5 rounded-xl gap-1 mb-4 shadow-inner"
+            style={{ background: "var(--bg-secondary)" }}
+          >
+            {searchTabs.map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => { setSearchTab(value); setIdValue(""); }}
+                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                style={
+                  searchTab === value
+                    ? {
+                      background: "var(--accent-green)",
+                      color: "white",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+                    }
+                    : { color: "var(--text-muted)" }
+                }
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
 
           {/* Input Field */}
           <div>
@@ -220,7 +317,7 @@ function HubContent() {
             >
               {serviceType === "nin"
                 ? (searchTab === "nin" ? "NIN Number" : "Phone Number")
-                : "BVN Number"}
+                : (searchTab === "bvn" ? "BVN Number" : "Phone Number")}
             </label>
             <div
               className="flex items-center rounded-xl border-2 transition-all duration-200 focus-within:ring-2"
@@ -231,7 +328,7 @@ function HubContent() {
               }}
             >
               <div className="pl-4 pr-2 py-3" style={{ color: "var(--text-muted)" }}>
-                {serviceType === "nin" && searchTab === "phone" ? <Phone className="w-4 h-4" /> : <Hash className="w-4 h-4" />}
+                {searchTab === "phone" ? <Phone className="w-4 h-4" /> : <Hash className="w-4 h-4" />}
               </div>
               <input
                 type="text"
@@ -239,9 +336,9 @@ function HubContent() {
                 value={idValue}
                 onChange={handleIdChange}
                 placeholder={
-                  serviceType === "nin"
-                    ? (searchTab === "nin" ? "Enter 11-digit NIN" : "e.g. 08012345678")
-                    : "Enter 11-digit BVN"
+                  searchTab === "phone" 
+                    ? "e.g. 08012345678" 
+                    : (serviceType === "nin" ? "Enter 11-digit NIN" : "Enter 11-digit BVN")
                 }
                 maxLength={maxLen}
                 className="flex-1 bg-transparent py-3 pr-4 text-sm focus:outline-none"
@@ -350,11 +447,24 @@ function HubContent() {
           {/* Error Message */}
           {error && (
             <div
-              className="flex items-center gap-2.5 p-3 rounded-xl text-sm"
+              className="p-4 rounded-xl text-sm"
               style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#dc2626" }}
             >
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error.message}</span>
+              </div>
+              
+              {error.code === 'INSUFFICIENT_BALANCE' && (
+                <Link
+                  href="/wallet"
+                  className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-accent-green hover:underline"
+                  style={{ color: "#0d6b0d" }}
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  Top up your wallet →
+                </Link>
+              )}
             </div>
           )}
 

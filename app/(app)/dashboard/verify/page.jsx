@@ -2,19 +2,21 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
 import NinForm from "@/components/NinForm";
+import { supabase } from "@/lib/supabase/client";
 
 import PremiumPlasticCard from "@/components/PremiumPlasticCard";
 import DownloadButton from "@/components/DownloadButton";
-import { Shield, Fingerprint, Info, Loader2 } from "lucide-react";
+import { Shield, Fingerprint, Info, Loader2, Wallet } from "lucide-react";
 
 export default function DashboardVerifyPage() {
     const router = useRouter();
     const { user, loading: authLoading, isAuthenticated } = useAuth();
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [error, setError] = useState(null); // Changed to null to store object
     const documentRef = useRef(null);
 
     useEffect(() => {
@@ -35,27 +37,61 @@ export default function DashboardVerifyPage() {
 
     const handleVerify = async (queryPayload) => {
         setLoading(true);
-        setError("");
+        setError(null); // Reset error
         setUserData(null);
 
         try {
             const { endpoint, data } = queryPayload;
-            
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
 
-            const responseData = await response.json();
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
 
-            if (!response.ok) {
-                throw new Error(responseData.error || "Verification failed");
+            if (!accessToken) {
+                throw new Error("User not authenticated. Please log in again.");
             }
+            
+            // ── Timeout Logic ───────────────────────────────────────────
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-            setUserData(responseData.user);
+            try {
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                const responseData = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(responseData.error || "Verification failed", { cause: responseData.code });
+                }
+
+                // ── Data Integrity Check ────────────────────────────────────
+                const identityUser = responseData.user;
+                const hasRequiredFields = identityUser && 
+                    identityUser.nin && 
+                    identityUser.firstName && 
+                    identityUser.lastName;
+
+                if (!hasRequiredFields) {
+                    throw new Error("Invalid registry data. Essential fields are missing from the record.");
+                }
+
+                setUserData(identityUser);
+            } catch (fetchErr) {
+                if (fetchErr.name === 'AbortError') {
+                    throw new Error("Verification request timed out. Please check your connection.");
+                }
+                throw fetchErr;
+            }
         } catch (err) {
-            setError(err.message);
+            setError({ message: err.message, code: err.cause });
         } finally {
             setLoading(false);
         }
@@ -76,9 +112,20 @@ export default function DashboardVerifyPage() {
                         <NinForm onSubmit={(query) => handleVerify({ endpoint: "/api/verify", data: { nin: query } })} loading={loading} />
 
                         {error && (
-                            <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-medium flex gap-3 items-center">
-                                <Info className="h-4 w-4" />
-                                {error}
+                            <div className="mt-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-medium">
+                                <div className="flex gap-3 items-start">
+                                    <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                                    <span>{error.message}</span>
+                                </div>
+                                {error.code === 'INSUFFICIENT_BALANCE' && (
+                                    <Link
+                                        href="/wallet"
+                                        className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-[#008751] hover:underline"
+                                    >
+                                        <Wallet className="w-3.5 h-3.5" />
+                                        Top up your wallet →
+                                    </Link>
+                                )}
                             </div>
                         )}
 

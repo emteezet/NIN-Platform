@@ -3,15 +3,15 @@ import { supabase } from '@/lib/supabase/client';
 import { identityService } from '@/services/IdentityService';
 
 export async function POST(request) {
+    console.log('[API Verify BVN] Request started');
     try {
         const body = await request.json();
-        const { firstname, lastname, dob, gender } = body;
+        const { bvn } = body;
 
-        console.log(`[API] Verifying NIN via Demography: ${firstname} ${lastname}`);
-
-        if (!firstname || !lastname || !dob || !gender) {
+        // Strict validation: exactly 11 numeric digits
+        if (!bvn || !/^\d{11}$/.test(bvn)) {
             return NextResponse.json(
-                { error: 'First name, last name, gender, and Date of Birth are required.' },
+                { error: 'Invalid input. BVN must be exactly 11 numeric digits.' },
                 { status: 400 }
             );
         }
@@ -21,7 +21,7 @@ export async function POST(request) {
         const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
 
         if (!token) {
-            console.error('[API Demography] Auth token missing or invalid prefix');
+            console.error('[API Verify BVN] Auth token missing or invalid prefix');
             return NextResponse.json(
                 { error: 'Unauthorized. Please log in to verify.' },
                 { status: 401 }
@@ -30,6 +30,8 @@ export async function POST(request) {
 
         let authUser = null;
         let authError = null;
+
+        // Using native https to bypass local fetch issues
         const https = await import('https');
         
         try {
@@ -41,7 +43,7 @@ export async function POST(request) {
                         'Authorization': `Bearer ${token}`,
                         'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
                     },
-                    timeout: 10000
+                    timeout: 10000 // 10s timeout
                 };
 
                 const req = https.request(url, options, (res) => {
@@ -64,11 +66,11 @@ export async function POST(request) {
                 });
 
                 req.on('error', (e) => {
-                    console.error('[API Demography] HTTPS Request Error:', e.message);
+                    console.error('[API Verify BVN] HTTPS Request Error:', e.message);
                     authError = { message: `Auth service unreachable: ${e.message}` };
                     resolve(null);
                 });
-
+                
                 req.on('timeout', () => {
                     req.destroy();
                     authError = { message: 'Authentication timed out' };
@@ -78,13 +80,13 @@ export async function POST(request) {
                 req.end();
             });
         } catch (err) {
-            console.error('[API Demography] Critical auth check failure:', err);
+            console.error('[API Verify BVN] Critical auth check failure:', err);
             authError = { message: 'Authentication internal error' };
         }
 
         if (authError || !authUser) {
-            console.error('[API Demography] Auth failure:', {
-                message: authError?.message,
+            console.error('[API Verify BVN] Auth failure:', { 
+                message: authError?.message, 
                 tokenLength: token?.length
             });
             return NextResponse.json(
@@ -95,19 +97,13 @@ export async function POST(request) {
 
         // ── 2. Call IdentityService (Handles Debit + Registry Lookup) ──
         try {
-            const result = await identityService.verifyByNinDemography(authUser.id, {
-                firstname,
-                lastname,
-                gender,
-                dob
-            });
+            const result = await identityService.verifyBvn(authUser.id, bvn);
             
             return NextResponse.json({
                 success: true,
                 status: result.status || 'VALID',
                 user: result.data,
-                lastGenerated: new Date().toISOString(),
-                serialNumber: result.serialNumber || result.reportId || ("SRN-" + Math.random().toString(36).substring(7).toUpperCase()),
+                generatedAt: new Date().toISOString()
             });
 
         } catch (err) {
@@ -115,7 +111,7 @@ export async function POST(request) {
             if (err.message?.toLowerCase().includes('insufficient') || err.code === 'INSUFFICIENT_BALANCE') {
                 return NextResponse.json(
                     {
-                        error: `Insufficient wallet balance. You need at least ₦150 to verify via demography.`,
+                        error: `Insufficient wallet balance. You need at least ₦100 to verify a BVN record.`,
                         code: 'INSUFFICIENT_BALANCE',
                     },
                     { status: 402 }
@@ -125,16 +121,16 @@ export async function POST(request) {
             // Handle Not Found
             if (err.code === 'IDENTITY_NOT_FOUND' || err.message?.toLowerCase().includes('not found')) {
                 return NextResponse.json(
-                    { error: 'NIN record not found for these demographic details in the official registry.' },
+                    { error: 'BVN record not found in the official registry.' },
                     { status: 404 }
                 );
             }
 
-            throw err;
+            throw err; // Pass to main catch block
         }
 
     } catch (err) {
-        console.error('Verify Demography API error:', err);
+        console.error('Verify BVN API error:', err);
         return NextResponse.json(
             { error: err.message || 'An error occurred during verification.' },
             { status: err.status || 500 }

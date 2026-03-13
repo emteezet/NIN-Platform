@@ -41,6 +41,12 @@
 
   html {
     scroll-behavior: smooth;
+    height: 100dvh;
+    /* Uses Dynamic Viewport Height for mobile bars */
+    width: 100vw;
+    /* Fills the width */
+
+
   }
 
   body {
@@ -51,7 +57,7 @@
       background-color 0.3s ease,
       color 0.3s ease;
     min-height: 100vh;
-    min-width: 100%;
+    min-width: 100vw;
   }
 }
 

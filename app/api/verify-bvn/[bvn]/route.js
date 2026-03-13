@@ -2,16 +2,17 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { identityService } from '@/services/IdentityService';
 
-export async function POST(request) {
+export async function GET(request, { params }) {
     try {
-        const body = await request.json();
-        const { firstname, lastname, dob, gender } = body;
+        const resolvedParams = await params;
+        const { bvn } = resolvedParams;
 
-        console.log(`[API] Verifying NIN via Demography: ${firstname} ${lastname}`);
+        console.log(`[API Dynamic BVN] Retrieving BVN: ${bvn}`);
 
-        if (!firstname || !lastname || !dob || !gender) {
+        // Validate BVN format
+        if (!bvn || !/^\d{11}$/.test(bvn)) {
             return NextResponse.json(
-                { error: 'First name, last name, gender, and Date of Birth are required.' },
+                { error: 'Invalid BVN format. Must be 11 digits.' },
                 { status: 400 }
             );
         }
@@ -21,9 +22,9 @@ export async function POST(request) {
         const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
 
         if (!token) {
-            console.error('[API Demography] Auth token missing or invalid prefix');
+            console.error('[API Dynamic BVN] Auth token missing or invalid prefix');
             return NextResponse.json(
-                { error: 'Unauthorized. Please log in to verify.' },
+                { error: 'Unauthorized. Please log in to see results.' },
                 { status: 401 }
             );
         }
@@ -64,7 +65,7 @@ export async function POST(request) {
                 });
 
                 req.on('error', (e) => {
-                    console.error('[API Demography] HTTPS Request Error:', e.message);
+                    console.error('[API Dynamic BVN] HTTPS Request Error:', e.message);
                     authError = { message: `Auth service unreachable: ${e.message}` };
                     resolve(null);
                 });
@@ -78,12 +79,12 @@ export async function POST(request) {
                 req.end();
             });
         } catch (err) {
-            console.error('[API Demography] Critical auth check failure:', err);
+            console.error('[API Dynamic BVN] Critical auth check failure:', err);
             authError = { message: 'Authentication internal error' };
         }
 
         if (authError || !authUser) {
-            console.error('[API Demography] Auth failure:', {
+            console.error('[API Dynamic BVN] Auth failure:', {
                 message: authError?.message,
                 tokenLength: token?.length
             });
@@ -95,12 +96,7 @@ export async function POST(request) {
 
         // ── 2. Call IdentityService (Handles Debit + Registry Lookup) ──
         try {
-            const result = await identityService.verifyByNinDemography(authUser.id, {
-                firstname,
-                lastname,
-                gender,
-                dob
-            });
+            const result = await identityService.verifyBvn(authUser.id, bvn);
             
             return NextResponse.json({
                 success: true,
@@ -115,7 +111,7 @@ export async function POST(request) {
             if (err.message?.toLowerCase().includes('insufficient') || err.code === 'INSUFFICIENT_BALANCE') {
                 return NextResponse.json(
                     {
-                        error: `Insufficient wallet balance. You need at least ₦150 to verify via demography.`,
+                        error: `Insufficient wallet balance to view this record. Fee: ₦100`,
                         code: 'INSUFFICIENT_BALANCE',
                     },
                     { status: 402 }
@@ -125,7 +121,7 @@ export async function POST(request) {
             // Handle Not Found
             if (err.code === 'IDENTITY_NOT_FOUND' || err.message?.toLowerCase().includes('not found')) {
                 return NextResponse.json(
-                    { error: 'NIN record not found for these demographic details in the official registry.' },
+                    { error: 'BVN record not found in the official registry.' },
                     { status: 404 }
                 );
             }
@@ -134,7 +130,7 @@ export async function POST(request) {
         }
 
     } catch (err) {
-        console.error('Verify Demography API error:', err);
+        console.error('Verify dynamic BVN error:', err);
         return NextResponse.json(
             { error: err.message || 'An error occurred during verification.' },
             { status: err.status || 500 }

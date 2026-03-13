@@ -10,8 +10,9 @@ import BvnRegularSlip from "@/components/BvnRegularSlip";
 import ImprovedNinSlip from "@/components/ImprovedNinSlip";
 import DownloadButton from "@/components/DownloadButton";
 import ProfilePreview from "@/components/ProfilePreview";
-import { Loader2 } from "lucide-react";
-import { getMockByBvn } from "@/lib/mockData";
+import { Loader2, Info, Wallet } from "lucide-react";
+import { useAuth } from "@/components/AuthContext";
+import { supabase } from "@/lib/supabase/client";
 
 function BVNContent() {
   const params = useParams();
@@ -34,34 +35,73 @@ function BVNContent() {
 
     const fetchVerification = async () => {
       try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // 1. Check for cached result from the Hub
+        const cached = sessionStorage.getItem('nin-result');
+        let resultData = null;
 
-        let mockData = getMockByBvn(params.bvn);
-
-        if (!mockData) {
-          // Fallback to a default mock user to ensure testing always works
-          const defaultMock = getMockByBvn("33333333333");
-          mockData = {
-            ...defaultMock,
-            bvn: params.bvn,
-          };
+        if (cached) {
+            try {
+                const parsed = JSON.parse(cached);
+                // Ensure it's the right BVN (sometimes bvn is stored in user.bvn or user.nin)
+                if ((parsed.user?.bvn === params.bvn) || (parsed.user?.nin === params.bvn)) {
+                    resultData = parsed;
+                }
+            } catch (e) {
+                console.error("BVN Cache parse error", e);
+            }
         }
 
-        setData({
-          bvn: mockData.bvn,
-          verifiedAt: new Date().toISOString(),
-          bankDetails: {
-            accountName: `${mockData.lastName} ${mockData.firstName} ${mockData.middleName}`,
-            bankName: "Guaranty Trust Bank",
-            bankCode: "058",
-            accountNumber: "0123456789",
-            accountType: "Savings",
-          },
-          ...mockData
-        });
+        // 2. Fallback: Authenticate and fetch
+        if (!resultData) {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+            try {
+                // Use the dedicated dynamic GET route
+                const res = await fetch(`/api/verify-bvn/${params.bvn}`, {
+                    method: "GET",
+                    headers: token ? { "Authorization": `Bearer ${token}` } : {},
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                const json = await res.json();
+
+                if (!res.ok) {
+                    const errMsg = json.error || "BVN Verification failed.";
+                    const isInsufficient = json.code === 'INSUFFICIENT_BALANCE' || res.status === 402;
+                    
+                    throw new Error(errMsg, { cause: isInsufficient ? 'INSUFFICIENT_BALANCE' : (json.code || '') });
+                }
+                resultData = json;
+            } catch (fetchErr) {
+                if (fetchErr.name === 'AbortError') {
+                    throw new Error("Verification request timed out. Please check your connection.");
+                }
+                throw fetchErr;
+            }
+        }
+
+        // 3. Data Integrity Check
+        const identityUser = resultData.user;
+        const hasRequiredFields = identityUser && 
+            (identityUser.bvn || identityUser.nin) && 
+            identityUser.firstName && 
+            identityUser.lastName;
+
+        if (!hasRequiredFields) {
+            throw new Error("Invalid registry data. Essential fields are missing from the official record.");
+        }
+
+        setData(resultData);
       } catch (err) {
-        setError("Network error during verification.");
+        setError({ 
+            message: err.message, 
+            code: err.cause 
+        });
       } finally {
         setLoading(false);
       }
@@ -119,17 +159,35 @@ function BVNContent() {
             className="text-sm mb-6"
             style={{ color: "var(--text-secondary)" }}
           >
-            {error}
+            {error.message}
           </p>
-          <Link
-            href="/verify-bvn"
-            className="px-4 py-2 rounded-lg font-medium text-white block"
-            style={{
-              background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)",
-            }}
-          >
-            Try Again
-          </Link>
+          
+          {error.code === 'INSUFFICIENT_BALANCE' ? (
+              <Link
+                href="/wallet"
+                className="px-6 py-3 rounded-xl font-bold text-white transition-all text-center flex items-center justify-center gap-2 mb-3"
+                style={{ background: "#0d6b0d" }}
+              >
+                <Wallet className="w-5 h-5" />
+                Top up Wallet
+              </Link>
+          ) : (
+              <Link
+                href="/verify-bvn"
+                className="px-4 py-2 rounded-lg font-medium text-white block text-center"
+                style={{
+                  background: "linear-gradient(135deg, #0d6b0d, #1a8c1a)",
+                }}
+              >
+                Try Again
+              </Link>
+          )}
+
+          {error.code === 'INSUFFICIENT_BALANCE' && (
+              <Link href="/verify" className="text-xs font-bold text-slate-400 hover:text-slate-600">
+                  Try another search
+              </Link>
+          )}
         </div>
       </div>
     );
