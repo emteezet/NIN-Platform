@@ -13,6 +13,14 @@ export const metadata = {
     "ID Card",
     "simulation",
   ],
+  manifest: "/manifest.json",
+  themeColor: "#008751",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "NIN-Platform",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -23,7 +31,21 @@ export default function RootLayout({ children }) {
           <OfflineBanner />
           {children}
         </Providers>
+        <SWRegistration />
       </body>
     </html>
   );
+}
+
+function SWRegistration() {
+  const { useEffect } = require("react");
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((registration) => console.log("SW registered:", registration))
+        .catch((error) => console.log("SW registration failed:", error));
+    }
+  }, []);
+  return null;
 }
