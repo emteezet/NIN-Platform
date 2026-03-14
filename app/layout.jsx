@@ -2,6 +2,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import OfflineBanner from "@/components/OfflineBanner";
 import SWRegistration from "@/components/SWRegistration";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 export const metadata = {
   title: "NIN Slip Generator | Third-Party Simulation",
@@ -20,6 +21,9 @@ export const metadata = {
     statusBarStyle: "default",
     title: "NIN-Platform",
   },
+  icons: {
+    apple: "/icon-192x192.png",
+  }
 };
 
 export const viewport = {
@@ -38,6 +42,7 @@ export default function RootLayout({ children }) {
           {children}
         </Providers>
         <SWRegistration />
+        <PWAInstallPrompt />
       </body>
     </html>
   );
