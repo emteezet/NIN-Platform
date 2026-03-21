@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { identityService } from '@/services/IdentityService';
 import { authenticateRequest } from '@/lib/utils/auth';
+const { decryptIdentity } = require('@/lib/crypto/encryption');
+
 
 export async function POST(request) {
     console.log('[API Verify NIN Phone] Request started');
@@ -30,6 +32,11 @@ export async function POST(request) {
         try {
             const result = await identityService.verifyByNinPhone(authUser.id, phone);
             
+            // Decrypt the result for the frontend
+            if (result.data && result.data.nin) {
+                result.data.nin = decryptIdentity(result.data.nin);
+            }
+
             return NextResponse.json({
                 success: true,
                 status: result.status || 'VALID',

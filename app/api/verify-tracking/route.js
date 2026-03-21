@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { identityService } from '@/services/IdentityService';
 import { authenticateRequest } from '@/lib/utils/auth';
+const { decryptIdentity } = require('@/lib/crypto/encryption');
+
 
 export async function POST(request) {
     try {
@@ -30,6 +32,12 @@ export async function POST(request) {
         try {
             const result = await identityService.verifyByNinTracking(authUser.id, tracking_id);
             
+            // Decrypt the result for the frontend
+            if (result.data) {
+                if (result.data.nin) result.data.nin = decryptIdentity(result.data.nin);
+                if (result.data.bvn) result.data.bvn = decryptIdentity(result.data.bvn);
+            }
+
             return NextResponse.json({
                 success: true,
                 status: result.status || 'VALID',

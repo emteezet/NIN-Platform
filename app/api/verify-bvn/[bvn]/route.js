@@ -35,6 +35,11 @@ export async function GET(request, { params }) {
         try {
             const result = await identityService.verifyBvn(authUser.id, bvn);
             
+            // Decrypt the result for the frontend
+            if (result.data && result.data.bvn) {
+                result.data.bvn = decryptIdentity(result.data.bvn);
+            }
+
             return NextResponse.json({
                 success: true,
                 status: result.status || 'VALID',

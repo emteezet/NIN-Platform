@@ -36,6 +36,11 @@ export async function GET(request, { params }) {
         try {
             const result = await identityService.verifyNin(authUser.id, nin);
             
+            // Decrypt the result for the frontend
+            if (result.data && result.data.nin) {
+                result.data.nin = decryptIdentity(result.data.nin);
+            }
+
             return NextResponse.json({
                 success: true,
                 status: result.status || 'VALID',

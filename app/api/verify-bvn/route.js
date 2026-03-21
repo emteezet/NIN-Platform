@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { identityService } from '@/services/IdentityService';
 import { authenticateRequest } from '@/lib/utils/auth';
+const { decryptIdentity } = require('@/lib/crypto/encryption');
+
 
 export async function POST(request) {
     console.log('[API Verify BVN] Request started');
@@ -30,6 +32,11 @@ export async function POST(request) {
         try {
             const result = await identityService.verifyBvn(authUser.id, bvn);
             
+            // Decrypt the result for the frontend
+            if (result.data && result.data.bvn) {
+                result.data.bvn = decryptIdentity(result.data.bvn);
+            }
+
             return NextResponse.json({
                 success: true,
                 status: result.status || 'VALID',
