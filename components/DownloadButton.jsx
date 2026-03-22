@@ -23,6 +23,12 @@ export default function DownloadButton({
     try {
       const html2canvas = (await import("html2canvas-pro")).default;
       const jsPDF = (await import("jspdf")).jsPDF;
+      
+      // Ensure all fonts are loaded before capturing
+      if (document.fonts) {
+        await document.fonts.ready;
+      }
+
       const element = templateRef.current;
 
       // ============================================================
@@ -51,6 +57,9 @@ export default function DownloadButton({
           img.onerror = resolve; // Continue even if one image fails
         });
       }));
+
+      // Small delay to ensure any CSS/layout recalculations are finished
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       let frontCanvas, backCanvas, mainCanvas;
 

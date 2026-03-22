@@ -41,29 +41,29 @@ export default function HomePage() {
                         </span>
                     </div>
                     <div className="flex items-center gap-6">
-                        {mounted ? (
-                            <>
-                                {!isAuthenticated && (
-                                    <Link href="/auth/login" className="text-sm font-bold text-slate-600 hover:text-[#008751] transition-colors hidden sm:block">
-                                        Login
-                                    </Link>
-                                )}
-                                <Link
-                                    href={isAuthenticated ? "/dashboard" : "/auth/signup"}
-                                    className="bg-[#008751] text-white px-6 py-2.5 rounded-xl font-black text-sm shadow-xl shadow-[#008751]/20 hover:bg-[#007043] hover:-translate-y-0.5 transition-all flex items-center gap-2"
-                                >
-                                    {isAuthenticated ? "Dashboard" : "Get Started"}
-                                    <ArrowRight className="w-4 h-4" />
-                                </Link>
-                            </>
-                        ) : (
-                             <Link
-                                href="/auth/signup"
-                                className="bg-[#008751] text-white px-6 py-2.5 rounded-xl font-black text-sm shadow-xl shadow-[#008751]/20 hover:bg-[#007043] hover:-translate-y-0.5 transition-all flex items-center gap-2"
-                            >
+                        {!mounted ? (
+                            // Server-side and Initial Client-side: Only "Get Started" to match default Guest state
+                            <Link href="/auth/signup" className="bg-[#008751] text-white px-6 py-2.5 rounded-xl font-black text-sm shadow-xl shadow-[#008751]/20 hover:bg-[#007043] hover:-translate-y-0.5 transition-all flex items-center gap-2">
                                 Get Started
                                 <ArrowRight className="w-4 h-4" />
                             </Link>
+                        ) : isAuthenticated ? (
+                            // Post-mount: Authenticated state
+                            <Link href="/dashboard" className="bg-[#008751] text-white px-6 py-2.5 rounded-xl font-black text-sm shadow-xl shadow-[#008751]/20 hover:bg-[#007043] hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                                Dashboard
+                                <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        ) : (
+                            // Post-mount: Guest state
+                            <>
+                                <Link href="/auth/login" className="text-sm font-bold text-slate-600 hover:text-[#008751] transition-colors hidden sm:block">
+                                    Login
+                                </Link>
+                                <Link href="/auth/signup" className="bg-[#008751] text-white px-6 py-2.5 rounded-xl font-black text-sm shadow-xl shadow-[#008751]/20 hover:bg-[#007043] hover:-translate-y-0.5 transition-all flex items-center gap-2">
+                                    Get Started
+                                    <ArrowRight className="w-4 h-4" />
+                                </Link>
+                            </>
                         )}
                     </div>
                 </div>
@@ -98,23 +98,13 @@ export default function HomePage() {
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                                {mounted ? (
-                                    <Link
-                                        href={isAuthenticated ? "/verify" : "/auth/login"}
-                                        className="px-8 py-5 bg-[#008751] text-white rounded-2xl font-black text-lg shadow-2xl shadow-[#008751]/30 hover:bg-[#007043] hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
-                                    >
-                                        <Search className="h-6 w-6" />
-                                        Start Verification
-                                    </Link>
-                                ) : (
-                                    <Link
-                                        href="/auth/login"
-                                        className="px-8 py-5 bg-[#008751] text-white rounded-2xl font-black text-lg shadow-2xl shadow-[#008751]/30 hover:bg-[#007043] hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
-                                    >
-                                        <Search className="h-6 w-6" />
-                                        Start Verification
-                                    </Link>
-                                )}
+                                <Link
+                                    href={!mounted ? "/auth/login" : (isAuthenticated ? "/verify" : "/auth/login")}
+                                    className="px-8 py-5 bg-[#008751] text-white rounded-2xl font-black text-lg shadow-2xl shadow-[#008751]/30 hover:bg-[#007043] hover:-translate-y-1 transition-all flex items-center justify-center gap-3"
+                                >
+                                    <Search className="h-6 w-6" />
+                                    Start Verification
+                                </Link>
                                 <div className="flex items-center gap-3 px-6 py-5 text-slate-400 font-bold">
                                     <Lock className="w-5 h-5" />
                                     Trusted by 10k+ users
