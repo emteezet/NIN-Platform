@@ -109,9 +109,9 @@ export async function verifyPaymentAction(reference) {
  * Server Action: Fetches recent transactions
  * @param {string} userId 
  */
-export async function getTransactionsAction(userId) {
+export async function getTransactionsAction(userId, limit = 10) {
     try {
-        const transactions = await walletService.getTransactions(userId);
+        const transactions = await walletService.getTransactions(userId, limit);
         return { success: true, transactions };
     } catch (error) {
         return { success: false, error: error.message, code: error.code || 'WALLET_ERROR' };

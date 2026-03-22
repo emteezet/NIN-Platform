@@ -14,6 +14,10 @@ export default function PWAInstallPrompt() {
     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     setIsStandalone(isStandaloneMode);
 
+    // Check if user previously dismissed the prompt
+    const isDismissed = localStorage.getItem('pwa-prompt-dismissed') === 'true';
+    if (isDismissed || isStandaloneMode) return;
+
     // Detect iOS
     const ios = /iPhone|iPad|iPod/.test(window.navigator.userAgent) && !window.MSStream;
     setIsIOS(ios);
@@ -26,19 +30,25 @@ export default function PWAInstallPrompt() {
       setTimeout(() => setShowPrompt(true), 3000);
     };
 
+    // Capture the appinstalled event
+    const installedHandler = () => {
+      console.log('PWA was installed');
+      localStorage.setItem('pwa-prompt-dismissed', 'true');
+      setShowPrompt(false);
+    };
+
     window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installedHandler);
 
     // If it's iOS and not already installed, show the custom iOS hint
-    if (ios && !isStandaloneMode) {
-        const lastPrompted = localStorage.getItem('ios-pwa-prompt-last');
-        const now = Date.now();
-        // Show once every 24 hours
-        if (!lastPrompted || (now - parseInt(lastPrompted) > 86400000)) {
-            setTimeout(() => setShowPrompt(true), 5000);
-        }
+    if (ios) {
+        setTimeout(() => setShowPrompt(true), 5000);
     }
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
+    };
   }, []);
 
   const handleInstallClick = async () => {
@@ -48,6 +58,7 @@ export default function PWAInstallPrompt() {
     const { outcome } = await deferredPrompt.userChoice;
     
     if (outcome === "accepted") {
+      localStorage.setItem('pwa-prompt-dismissed', 'true');
       setDeferredPrompt(null);
       setShowPrompt(false);
     }
@@ -55,9 +66,8 @@ export default function PWAInstallPrompt() {
 
   const closePrompt = () => {
     setShowPrompt(false);
-    if (isIOS) {
-        localStorage.setItem('ios-pwa-prompt-last', Date.now().toString());
-    }
+    // Mark as dismissed so it doesn't show again this session/ever
+    localStorage.setItem('pwa-prompt-dismissed', 'true');
   };
 
   if (isStandalone || !showPrompt) return null;

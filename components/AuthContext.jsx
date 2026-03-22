@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
@@ -67,7 +67,7 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  const signup = async (
+  const signup = useCallback(async (
     email,
     password,
     confirmPassword,
@@ -78,7 +78,7 @@ export function AuthProvider({ children }) {
       if (password !== confirmPassword) {
         throw new Error("Passwords do not match");
       }
-
+ 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -89,31 +89,31 @@ export function AuthProvider({ children }) {
           }
         }
       });
-
+ 
       if (error) throw error;
-
+ 
       return { success: true, user: data.user };
     } catch (error) {
       return { success: false, error: error.message };
     }
-  };
-
-  const login = async (email, password) => {
+  }, []);
+ 
+  const login = useCallback(async (email, password) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
+ 
       if (error) throw error;
-
+ 
       return { success: true, user: data.user };
     } catch (error) {
       return { success: false, error: error.message };
     }
-  };
-
-  const logout = async () => {
+  }, []);
+ 
+  const logout = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -122,7 +122,43 @@ export function AuthProvider({ children }) {
     } catch (error) {
       return { success: false, error: error.message };
     }
-  };
+  }, [router]);
+ 
+  // ============================================================
+  // INACTIVITY TIMEOUT LOGIC (Security Enhancement)
+  // ============================================================
+  const timeoutRef = useRef(null);
+  const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutes
+ 
+  const resetInactivityTimer = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (user) {
+      timeoutRef.current = setTimeout(() => {
+        console.log("[Auth] Session expired due to inactivity");
+        logout();
+      }, INACTIVITY_LIMIT);
+    }
+  }, [user, logout]);
+ 
+  useEffect(() => {
+    if (user) {
+      // Initial timer set
+      resetInactivityTimer();
+ 
+      // Event listeners for activity
+      const events = ["mousedown", "keydown", "scroll", "touchstart", "mousemove"];
+      events.forEach((event) => {
+        window.addEventListener(event, resetInactivityTimer);
+      });
+ 
+      return () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        events.forEach((event) => {
+          window.removeEventListener(event, resetInactivityTimer);
+        });
+      };
+    }
+  }, [user, resetInactivityTimer]);
 
   const value = {
     user,
