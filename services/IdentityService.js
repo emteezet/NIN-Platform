@@ -9,7 +9,7 @@ const VERIFICATION_FEES = {
     NIN: 150,           // Verify NIN (Direct)
     NIN_PHONE: 200,     // Search NIN by Phone
     NIN_TRACKING: 200,  // Search NIN by Tracking ID
-    BVN: 100,           // Verify BVN (Direct)
+    BVN: 150,           // Verify BVN (Direct)
     BVN_PHONE: 150      // Search BVN by Phone
 };
 

@@ -52,7 +52,7 @@ export async function POST(request) {
             if (err.message?.toLowerCase().includes('insufficient') || err.code === 'INSUFFICIENT_BALANCE') {
                 return NextResponse.json(
                     {
-                        error: `Insufficient wallet balance. You need at least ₦100 to verify a BVN record.`,
+                        error: `Insufficient wallet balance. You need at least ₦150 to verify a BVN record.`,
                         code: 'INSUFFICIENT_BALANCE',
                     },
                     { status: 402 }

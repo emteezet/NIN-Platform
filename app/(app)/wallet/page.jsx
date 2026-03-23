@@ -79,7 +79,7 @@ export default function WalletPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-6 h-6 bg-accent-green-light text-accent-green rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</span>
-                  Each NIN or BVN verification costs <strong className="text-text-primary">₦100</strong> and is deducted automatically.
+                  Each NIN or BVN verification costs <strong className="text-text-primary">₦150</strong> and is deducted automatically.
                 </li>
               </ul>
             </div>

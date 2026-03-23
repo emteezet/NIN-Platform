@@ -79,7 +79,7 @@ export default function IdentityRequestForm({ userId }) {
                     <div className="mt-4 p-4 rounded-xl bg-accent-green/5 border border-accent-green/10 flex items-start gap-3">
                         <Info className="w-4 h-4 text-accent-green shrink-0 mt-0.5" />
                         <p className="text-[11px] text-text-secondary leading-relaxed">
-                            Verification requires a <span className="font-bold text-text-primary">₦100</span> fee. You will be able to select your preferred slip template on the next page.
+                            Verification requires a <span className="font-bold text-text-primary">₦150</span> fee. You will be able to select your preferred slip template on the next page.
                         </p>
                     </div>
                 </div>

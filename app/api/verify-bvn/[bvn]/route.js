@@ -52,7 +52,7 @@ export async function GET(request, { params }) {
             if (err.message?.toLowerCase().includes('insufficient') || err.code === 'INSUFFICIENT_BALANCE') {
                 return NextResponse.json(
                     {
-                        error: `Insufficient wallet balance to view this record. Fee: ₦100`,
+                        error: `Insufficient wallet balance to view this record. Fee: ₦150`,
                         code: 'INSUFFICIENT_BALANCE',
                     },
                     { status: 402 }

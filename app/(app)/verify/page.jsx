@@ -453,7 +453,7 @@ function HubContent() {
               </div>
             </div>
             <span className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
-              I hereby declare that this information is mine and I consent to the verification fee of ₦100.
+              I hereby declare that this information is mine and I consent to the verification fee of ₦150.
             </span>
           </label>
 
