@@ -9,11 +9,13 @@ import { adminService } from "../services/AdminService";
  */
 export async function getPlatformStatsAction(userEmail) {
     try {
-        // Simple authorization check: Only allow specific admin email
-        // In a real app, this would use RBAC/Roles from the DB.
-        const adminEmail = process.env.ADMIN_EMAIL || "admin@ninplatform.com";
+        const adminEmail = (process.env.ADMIN_EMAIL || "emteezetdesigns@gmail.com").toLowerCase().trim();
+        const requestingEmail = userEmail ? userEmail.toLowerCase().trim() : "";
 
-        if (userEmail !== adminEmail) {
+        console.log(`[Admin Auth] Requesting: "${requestingEmail}", Allowed: "${adminEmail}"`);
+
+        if (requestingEmail !== adminEmail) {
+            console.warn(`[Admin Auth] Access Denied for ${requestingEmail}`);
             throw new Error("Unauthorized access to admin dashboard.");
         }
 

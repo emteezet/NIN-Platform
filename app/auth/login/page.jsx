@@ -31,7 +31,8 @@ export default function LoginPage() {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      router.push("/dashboard");
+      const isAdmin = formData.email.toLowerCase().trim() === "emteezetdesigns@gmail.com";
+      router.push(isAdmin ? "/admin" : "/dashboard");
     } else {
       setError(result.error);
       setLoading(false);
