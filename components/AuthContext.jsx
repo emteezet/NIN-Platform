@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -115,11 +116,17 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
+      setLoggingOut(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Artificial delay for better UX animation if it's too fast
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       router.push("/");
       return { success: true };
     } catch (error) {
+      setLoggingOut(false);
       return { success: false, error: error.message };
     }
   }, [router]);
@@ -167,10 +174,33 @@ export function AuthProvider({ children }) {
     signup,
     login,
     logout,
+    loggingOut,
     isAuthenticated: !!user,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {loggingOut && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative">
+            {/* Outer spinning ring */}
+            <div className="w-20 h-20 rounded-full border-4 border-primary-100 border-t-primary-600 animate-spin" />
+            {/* Logo in center */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img src="/ZetVerify-logo icon.png" className="w-10 h-10 object-contain animate-pulse" alt="" />
+            </div>
+          </div>
+          <h2 className="mt-8 text-xl font-black tracking-tight text-primary-900 animate-pulse">
+            Signing out...
+          </h2>
+          <p className="mt-2 text-sm font-medium text-primary-500/60 uppercase tracking-widest">
+            See you soon
+          </p>
+        </div>
+      )}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

@@ -185,7 +185,7 @@ export default function HomePage() {
                                 icon: <Search className="w-7 h-7" />,
                                 title: "1. Search & Verify",
                                 desc: "Enter your NIN or BVN number. We verify it instantly with official records.",
-                                color: "emerald"
+                                color: "primary"
                             },
                             {
                                 icon: <Smartphone className="w-7 h-7" />,
@@ -197,7 +197,7 @@ export default function HomePage() {
                                 icon: <FileText className="h-7 w-7" />,
                                 title: "3. Generate PDF",
                                 desc: "Download your high-fidelity PDF instantly, ready for printing or digital use.",
-                                color: "indigo"
+                                color: "accent"
                             }
                         ].map((step, i) => (
                             <div key={i} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 text-center flex flex-col items-center group hover:shadow-xl transition-all duration-300">
