@@ -45,14 +45,9 @@
 
   html {
     scroll-behavior: smooth;
-    height: 100dvh;
-    /* Uses Dynamic Viewport Height for mobile bars */
-    width: 100vw;
-    /* Fills the width */
-
-
+    min-height: 100%;
   }
-
+  
   body {
     font-family: "Inter", system-ui, sans-serif;
     background-color: var(--bg-primary);
@@ -60,8 +55,11 @@
     transition:
       background-color 0.3s ease,
       color 0.3s ease;
-    min-height: 100vh;
-    min-width: 100vw;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    position: relative;
   }
 }
 
@@ -311,14 +309,6 @@
     /* Firefox */
   }
 
-  html,
-  body {
-    overflow-x: hidden;
-    min-height: 100svh;
-    min-height: 100dvh;
-    margin: 0;
-    padding: 0;
-  }
 
   /* ── Print styles ── */
   @media print {
