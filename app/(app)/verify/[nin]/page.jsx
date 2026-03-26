@@ -15,7 +15,7 @@ import ProfilePreview from "@/components/ProfilePreview";
 function VerifyContent() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const slipType = searchParams.get("slipType") || "improved";
+  const slipType = searchParams.get("slipType") || "premium";
 
   const { isAuthenticated, loading: authLoading } = useAuth();
   

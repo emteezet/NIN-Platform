@@ -74,7 +74,7 @@ function HubContent() {
   const [serviceType, setServiceType] = useState("nin");
   const [searchTab, setSearchTab] = useState("nin");
   const [idValue, setIdValue] = useState("");
-  const [slipType, setSlipType] = useState("regular");
+  const [slipType, setSlipType] = useState("premium");
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -101,7 +101,7 @@ function HubContent() {
       setSearchTab(searchBy === "phone" ? "phone" : "bvn");
     } else if (type === "nin") {
       setServiceType("nin");
-      setSlipType(slip || "regular");
+      setSlipType(slip || "premium");
       setSearchTab(searchBy === "phone" ? "phone" : "nin");
     }
 
@@ -116,7 +116,7 @@ function HubContent() {
   const handleServiceSwitch = (type) => {
     setServiceType(type);
     setSearchTab(type === "nin" ? "nin" : "bvn");
-    setSlipType(type === "nin" ? "regular" : "slip");
+    setSlipType(type === "nin" ? "premium" : "slip");
     setIdValue("");
     setError("");
     setConsent(false);
