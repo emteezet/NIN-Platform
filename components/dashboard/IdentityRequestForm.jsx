@@ -48,9 +48,10 @@ export default function IdentityRequestForm({ userId }) {
                                 setValue("");
                             }}
                             className={`px-6 py-2.5 rounded-lg font-medium transition-all ${identityType === type
-                                ? "bg-primary-600 text-white shadow-md shadow-primary-500/20"
+                                ? "text-white shadow-md shadow-primary-500/20"
                                 : "text-text-muted hover:text-text-primary"
                                 }`}
+                            style={identityType === type ? { background: "linear-gradient(135deg, #19325C, #24718A)" } : {}}
                         >
                             {type === "NIN" ? "NIN (National ID)" : "BVN (Bank Verification)"}
                         </button>
@@ -87,7 +88,7 @@ export default function IdentityRequestForm({ userId }) {
                 <button
                     type="submit"
                     disabled={value.length < 11}
-                    className="btn-primary w-full py-4 flex items-center justify-center gap-3 font-bold shadow-lg shadow-accent-green/20"
+                    className="btn-primary w-full py-4 flex items-center justify-center gap-3 font-bold shadow-lg shadow-primary-500/20"
                 >
                     <Search className="w-5 h-5" />
                     Find identity details
