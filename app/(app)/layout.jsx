@@ -5,7 +5,7 @@ import BottomNav from "@/components/BottomNav";
 
 export default function AppLayout({ children }) {
     return (
-        <div className="flex flex-col h-screen overflow-hidden">
+        <div className="flex flex-col h-[100dvh] overflow-hidden">
             <Navbar />
             <div className="flex flex-1 relative w-full overflow-hidden">
                 <Sidebar />
