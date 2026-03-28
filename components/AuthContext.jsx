@@ -121,11 +121,16 @@ export function AuthProvider({ children }) {
       if (error) throw error;
 
       // Artificial delay for better UX animation if it's too fast
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
+      // Clear states and navigate
+      setLoggingOut(false);
+      setUser(null);
       router.push("/");
+      
       return { success: true };
     } catch (error) {
+      console.error("[Auth] Logout failed:", error);
       setLoggingOut(false);
       return { success: false, error: error.message };
     }
