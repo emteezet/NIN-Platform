@@ -49,7 +49,7 @@ export default function WalletWidget({ userId, userEmail }) {
             return;
         }
 
-        setIsInitializing(true);
+        setIsInitializing(false);
         try {
             const result = await initializePaymentAction(Number(amount));
 
