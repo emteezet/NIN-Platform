@@ -7,7 +7,7 @@ export default function AppLayout({ children }) {
     return (
         <div className="flex flex-col h-dvh overflow-hidden">
             <Navbar />
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 pt-16 overflow-hidden">
                 <Sidebar />
                 <main className="flex-1 overflow-y-auto scroll-smooth">
                     <div className="min-h-full flex flex-col pb-24 md:pb-0">

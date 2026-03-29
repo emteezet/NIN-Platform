@@ -13,7 +13,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="no-print sticky top-0 z-50 backdrop-blur-lg border-b"
+      className="no-print fixed top-0 left-0 right-0 z-50 backdrop-blur-lg border-b"
       style={{
         backgroundColor: "var(--bg-card)",
         borderColor: "var(--border-color)",
