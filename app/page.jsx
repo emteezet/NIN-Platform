@@ -28,7 +28,7 @@ export default function HomePage() {
     // Helper to avoid hydration mismatch
 
     return (
-        <main className="min-h-screen bg-white text-slate-900 selection:bg-[#19325C]/20 overflow-x-hidden">
+        <main className="h-screen overflow-y-auto bg-white text-slate-900 selection:bg-[#19325C]/20 overflow-x-hidden scroll-smooth">
             {/* Simple Navigation */}
             <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b border-slate-100/50 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">

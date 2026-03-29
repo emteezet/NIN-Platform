@@ -54,7 +54,8 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center px-4 py-20">
+    <div className="h-screen overflow-y-auto">
+      <div className="min-h-full flex items-center justify-center px-4 py-20">
       <div
         className="glass-card w-full max-w-md p-8"
         style={{
@@ -282,6 +283,7 @@ export default function SignupPage() {
             Sign in here
           </Link>
         </p>
+      </div>
       </div>
     </div>
   );
