@@ -19,7 +19,7 @@ export default function BottomNav() {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Services", href: "/verify", icon: ShieldCheck },
     { name: "Wallet", href: "/wallet", icon: Wallet },
-    { name: "Transactions", href: "/transactions", icon: History },
+    { name: "History", href: "/history", icon: History },
     { name: "Account", href: "/account-info", icon: UserCircle },
   ];
 

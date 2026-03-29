@@ -21,6 +21,7 @@ export default function Sidebar() {
       ],
     },
     { name: "Wallet", href: "/wallet", icon: "💳" },
+    { name: "Verification History", href: "/history", icon: "📜" },
     { name: "Transaction", href: "/transactions", icon: "📈" },
     { name: "Account Info", href: "/account-info", icon: "👤" },
   ];

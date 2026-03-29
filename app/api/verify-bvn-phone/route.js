@@ -8,7 +8,7 @@ export async function POST(request) {
     console.log('[API BVN Phone] Request started');
     try {
         const body = await request.json();
-        const { phone } = body;
+        const { phone, slipType = 'regular' } = body;
 
         // Strict validation: exactly 11 numeric digits
         if (!phone || !/^\d{11}$/.test(phone)) {
@@ -30,7 +30,7 @@ export async function POST(request) {
 
         // ── 2. Call IdentityService (Handles Debit + Registry Lookup) ──
         try {
-            const result = await identityService.verifyBvnPhone(authUser.id, phone);
+            const result = await identityService.verifyBvnPhone(authUser.id, phone, slipType);
             
             // Decrypt the result for the frontend
             if (result.data && result.data.bvn) {

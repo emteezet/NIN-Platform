@@ -6,7 +6,8 @@ const { decryptIdentity } = require('@/lib/crypto/encryption');
 
 export async function POST(request) {
     try {
-        const { tracking_id } = body;
+        const body = await request.json();
+        const { tracking_id, slipType = 'regular' } = body;
         const { maskData } = require('@/lib/crypto/encryption');
 
         console.log(`[API] Verifying NIN via Tracking ID: ${maskData(tracking_id)}`);
@@ -30,7 +31,7 @@ export async function POST(request) {
 
         // ── 2. Call IdentityService (Handles Debit + Registry Lookup) ──
         try {
-            const result = await identityService.verifyByNinTracking(authUser.id, tracking_id);
+            const result = await identityService.verifyByNinTracking(authUser.id, tracking_id, slipType);
             
             // Decrypt the result for the frontend display, but keep encrypted for navigation
             if (result.data && (result.data.nin || result.data.bvn)) {

@@ -166,19 +166,19 @@ function HubContent() {
       if (serviceType === "nin") {
         if (searchTab === "phone") {
           endpoint = "/api/verify-nin-phone";
-          payload = { phone: idValue };
+          payload = { phone: idValue, slipType };
         } else {
           endpoint = "/api/verify";
-          payload = { nin: idValue };
+          payload = { nin: idValue, slipType };
         }
       } else {
         // BVN
         if (searchTab === "phone") {
           endpoint = "/api/verify-bvn-phone";
-          payload = { phone: idValue };
+          payload = { phone: idValue, slipType };
         } else {
           endpoint = "/api/verify-bvn";
-          payload = { bvn: idValue };
+          payload = { bvn: idValue, slipType };
         }
       }
       

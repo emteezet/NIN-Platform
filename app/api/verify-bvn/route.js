@@ -8,7 +8,7 @@ export async function POST(request) {
     console.log('[API Verify BVN] Request started');
     try {
         const body = await request.json();
-        const { bvn } = body;
+        const { bvn, slipType = 'regular' } = body;
 
         // Strict validation: exactly 11 numeric digits
         if (!bvn || !/^\d{11}$/.test(bvn)) {
@@ -30,7 +30,7 @@ export async function POST(request) {
 
         // ── 2. Call IdentityService (Handles Debit + Registry Lookup) ──
         try {
-            const result = await identityService.verifyBvn(authUser.id, bvn);
+            const result = await identityService.verifyBvn(authUser.id, bvn, slipType);
             
             // Decrypt the result for the frontend display, but keep encrypted for navigation
             if (result.data && (result.data.bvn || result.data.nin)) {

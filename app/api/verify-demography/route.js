@@ -7,7 +7,7 @@ const { decryptIdentity } = require('@/lib/crypto/encryption');
 export async function POST(request) {
     try {
         const body = await request.json();
-        const { firstname, lastname, dob, gender } = body;
+        const { firstname, lastname, dob, gender, slipType = 'regular' } = body;
         const { maskData } = require('@/lib/crypto/encryption');
 
         console.log(`[API] Verifying NIN via Demography: ${maskData(firstname)} ${maskData(lastname)}`);
@@ -36,7 +36,7 @@ export async function POST(request) {
                 lastname,
                 gender,
                 dob
-            });
+            }, slipType);
             
             // Decrypt the result for the frontend display, but keep encrypted for navigation
             if (result.data && result.data.nin) {

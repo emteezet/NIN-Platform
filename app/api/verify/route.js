@@ -8,7 +8,7 @@ export async function POST(request) {
     console.log('[API Verify] Request started');
     try {
         const body = await request.json();
-        const { nin } = body;
+        const { nin, slipType = 'regular' } = body;
 
         // Strict validation: exactly 11 numeric digits
         if (!nin || !/^\d{11}$/.test(nin)) {
@@ -30,7 +30,7 @@ export async function POST(request) {
 
         // ── 2. Call IdentityService (Handles Debit + Registry Lookup) ──
         try {
-            const result = await identityService.verifyNin(authUser.id, nin);
+            const result = await identityService.verifyNin(authUser.id, nin, slipType);
             
             // Decrypt the result for the frontend display, but keep encrypted for navigation
             if (result.data && result.data.nin) {
