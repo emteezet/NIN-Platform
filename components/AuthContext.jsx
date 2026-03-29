@@ -126,7 +126,7 @@ export function AuthProvider({ children }) {
       // Clear states and navigate
       setLoggingOut(false);
       setUser(null);
-      router.push("/");
+      router.push("/auth/login");
       
       return { success: true };
     } catch (error) {
