@@ -99,7 +99,7 @@ export default function WalletWidget({ userId, userEmail }) {
                 <div className="grid grid-cols-2 gap-3">
                     <button
                         onClick={() => setShowFundInput(true)}
-                        disabled={!isOnline}
+                        disabled={!isOnline || true}
                         className="btn-primary flex items-center justify-center gap-2 py-3 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={!isOnline ? "Connect to internet to fund" : ""}
                     >
