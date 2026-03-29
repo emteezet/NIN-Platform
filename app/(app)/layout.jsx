@@ -12,10 +12,10 @@ export default function AppLayout({ children }) {
                 <main
                     className="flex-1 w-full pb-32 md:pb-0 overflow-y-auto overflow-x-hidden scroll-smooth transition-all duration-300"
                     id="main-content"
-                    style={{
-                        WebkitOverflowScrolling: "touch",
-                        overscrollBehaviorY: "contain"
-                    }}
+                // style={{
+                //     WebkitOverflowScrolling: "touch",
+                //     overscrollBehaviorY: "contain"
+                // }}
                 >
                     {children}
                     <Footer />
