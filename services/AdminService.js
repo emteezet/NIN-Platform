@@ -70,7 +70,7 @@ export class AdminService {
     }
 
     /**
-     * Fetches all users with their ledger-calculated wallet balance
+     * Fetches all users with their calculated wallet balance
      */
     async getAllUsers() {
         try {
@@ -101,10 +101,13 @@ export class AdminService {
             }, {});
 
             // 4. Attach balances to users
-            return users.map(u => ({
-                ...u,
-                wallet_balance: balanceMap[u.wallet?.[0]?.id] || 0
-            }));
+            return users.map(u => {
+                const wallet = Array.isArray(u.wallet) ? u.wallet[0] : u.wallet;
+                return {
+                    ...u,
+                    wallet_balance: balanceMap[wallet?.id] || 0
+                };
+            });
         } catch (error) {
             console.error("[AdminService] Error fetching users:", error);
             throw error;

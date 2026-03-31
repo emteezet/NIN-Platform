@@ -234,7 +234,7 @@ export default function AdminUsersPage() {
                                                 <span className="text-sm font-black text-text-primary">
                                                     ₦{u.wallet_balance?.toLocaleString() || "0"}
                                                 </span>
-                                                <span className="text-[10px] text-text-muted">Ledger Balance</span>
+                                                <span className="text-[10px] text-text-muted">Wallet Balance</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-xs text-text-muted">
@@ -468,7 +468,7 @@ export default function AdminUsersPage() {
                                             activeTab === "TRANSACTIONS" ? 'bg-white text-primary-600 shadow-sm' : 'text-text-muted hover:text-text-primary'
                                         }`}
                                     >
-                                        Financial Ledger
+                                        Transaction History
                                     </button>
                                     <button 
                                         onClick={() => setActiveTab("VERIFICATIONS")}

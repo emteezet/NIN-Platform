@@ -4,11 +4,11 @@ import { WalletError, ErrorCodes } from "../lib/errors/AppError";
 
 /**
  * @class WalletService
- * @description Manages atomic wallet operations (Credits, Debits) using a ledger-based approach.
+ * @description Manages atomic wallet operations (Credits, Debits) using a transaction-based approach.
  */
 export class WalletService {
     /**
-     * Fetches the current balance for a user by summing the transactions ledger.
+     * Fetches the current balance for a user by summing the transaction history.
      * @param {string} userId 
      * @returns {Promise<number>}
      */

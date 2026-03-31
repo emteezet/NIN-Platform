@@ -158,7 +158,7 @@ export default function AdminDashboardPage() {
                                 {[1, 2, 3].map(i => <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200" />)}
                             </div>
                         </div>
-                        <h3 className="text-text-muted text-sm font-medium">Ledger Requests</h3>
+                        <h3 className="text-text-muted text-sm font-medium">Total Transactions</h3>
                         <p className="text-3xl font-bold text-text-primary mt-1">{stats?.transactions.toLocaleString()}</p>
                     </div>
                 </div>
@@ -253,7 +253,7 @@ export default function AdminDashboardPage() {
                         <div className="glass-card p-8 bg-slate-900 text-white border-transparent">
                             <h4 className="font-bold text-sm mb-2 text-primary-500">Admin Tip</h4>
                             <p className="text-xs text-white/60 leading-relaxed">
-                                All platform-level transactions are ACID compliant. Revenue figures shown are calculated directly from the service fee ledger entries.
+                                All platform-level transactions are ACID compliant. Revenue figures shown are calculated directly from the transaction history.
                             </p>
                         </div>
                     </div>
