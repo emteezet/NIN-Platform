@@ -333,13 +333,7 @@
     }
   }
 
-  /* ── Main content margin when sidebar exists ── */
-  @media (min-width: 768px) {
-    .flex:has(> aside)>main {
-      margin-left: 16rem;
-      /* 256px / 16 = 16rem */
-    }
-  }
+  /* ── Main content layout adjusted via flexbox in AppLayout ── */
 }
 
 /* ── NIN Card & Slip Capture Styles (Shared for PDF) ── */

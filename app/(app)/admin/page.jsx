@@ -16,7 +16,7 @@ import {
     RefreshCw,
     Search
 } from "lucide-react";
-import { getPlatformStatsAction } from "@/actions/admin";
+import { getPlatformStatsAction, getPaginatedGlobalActivityAction } from "@/actions/admin";
 import { useNotification } from "@/components/NotificationContext";
 
 export default function AdminDashboardPage() {
@@ -27,17 +27,40 @@ export default function AdminDashboardPage() {
     const [fetching, setFetching] = useState(true);
     const [error, setError] = useState(null);
 
+    // Pagination State
+    const [activityPage, setActivityPage] = useState(1);
+    const [activityData, setActivityData] = useState({ transactions: [], total: 0 });
+    const [fetchingActivity, setFetchingActivity] = useState(false);
+    const pageSize = 10;
+
     const fetchStats = async () => {
         setFetching(true);
         const result = await getPlatformStatsAction();
         if (result.success) {
             setStats(result.stats);
+            // Initial activity load
+            fetchActivity(1);
             if (stats) showNotification("Dashboard statistics updated", "success");
         } else {
             setError(result.error);
             showNotification(result.error, "error");
         }
         setFetching(false);
+    };
+
+    const fetchActivity = async (page) => {
+        setFetchingActivity(true);
+        const result = await getPaginatedGlobalActivityAction(page, pageSize);
+        if (result.success) {
+            setActivityData({
+                transactions: result.transactions,
+                total: result.total
+            });
+            setActivityPage(page);
+        } else {
+            showNotification(result.error, "error");
+        }
+        setFetchingActivity(false);
     };
 
     useEffect(() => {
@@ -80,6 +103,8 @@ export default function AdminDashboardPage() {
             </div>
         );
     }
+
+    const totalPages = Math.ceil(activityData.total / pageSize);
 
     return (
         <div className="min-h-screen bg-bg-secondary/30 pb-20">
@@ -165,7 +190,7 @@ export default function AdminDashboardPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Recent Activity Feed */}
-                    <div className="lg:col-span-2 glass-card overflow-hidden">
+                    <div className="lg:col-span-2 glass-card overflow-hidden h-fit">
                         <div className="p-6 border-b border-bg-secondary/50 flex items-center justify-between">
                             <h3 className="font-bold text-text-primary flex items-center gap-2">
                                 <Activity className="w-5 h-5 text-primary-500" />
@@ -183,8 +208,8 @@ export default function AdminDashboardPage() {
                                         <th className="px-6 py-4 text-center">Reference</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-bg-secondary/30">
-                                    {stats?.recentActivity.map((tx) => (
+                                <tbody className={`divide-y divide-bg-secondary/30 transition-opacity duration-200 ${fetchingActivity ? 'opacity-50' : 'opacity-100'}`}>
+                                    {activityData.transactions.map((tx) => (
                                         <tr key={tx.id} className="hover:bg-bg-secondary/20 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-col">
@@ -218,6 +243,46 @@ export default function AdminDashboardPage() {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination Footer */}
+                        <div className="p-6 border-t border-bg-secondary/50 flex items-center justify-between bg-bg-secondary/10">
+                            <p className="text-xs text-text-muted">
+                                Showing <span className="font-bold text-text-primary">{(activityPage - 1) * pageSize + 1}</span> to <span className="font-bold text-text-primary">{Math.min(activityPage * pageSize, activityData.total)}</span> of <span className="font-bold text-text-primary">{activityData.total}</span> entries
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => fetchActivity(activityPage - 1)}
+                                    disabled={activityPage === 1 || fetchingActivity}
+                                    className="px-4 py-2 text-xs font-bold bg-white border border-slate-200 rounded-lg disabled:opacity-50 hover:bg-slate-50 transition-colors"
+                                >
+                                    Previous
+                                </button>
+                                <div className="flex items-center gap-1">
+                                    {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+                                        const pageNum = i + 1;
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => fetchActivity(pageNum)}
+                                                className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                                                    activityPage === pageNum ? 'bg-primary-500 text-white shadow-lg shadow-primary-200' : 'hover:bg-slate-100 text-text-muted'
+                                                }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                    {totalPages > 5 && <span className="text-xs text-text-muted px-2">...</span>}
+                                </div>
+                                <button
+                                    onClick={() => fetchActivity(activityPage + 1)}
+                                    disabled={activityPage >= totalPages || fetchingActivity}
+                                    className="px-4 py-2 text-xs font-bold bg-white border border-slate-200 rounded-lg disabled:opacity-50 hover:bg-slate-50 transition-colors"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {/* System Health / Logs */}
@@ -234,19 +299,7 @@ export default function AdminDashboardPage() {
                                 >
                                     Manage Registry Users
                                     <Users className="w-4 h-4 text-white/70 group-hover:scale-110 transition-transform" />
-                                </button>
-                                <button className="w-full py-4 px-6 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-between group hover:bg-slate-800 transition-all shadow-lg hover:shadow-slate-400/20">
-                                    Global Maintenance
-                                    <ChevronRight className="w-4 h-4 text-white/40 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                                <button className="w-full py-4 px-6 border-2 border-bg-secondary text-text-primary rounded-xl font-bold flex items-center justify-between group hover:border-text-muted/20 transition-all">
-                                    Provider Logs
-                                    <ChevronRight className="w-4 h-4 text-text-muted group-hover:translate-x-1 transition-transform" />
-                                </button>
-                                <button className="w-full py-4 px-6 border-2 border-bg-secondary text-text-primary rounded-xl font-bold flex items-center justify-between group hover:border-text-muted/20 transition-all">
-                                    Manual Reconciliation
-                                    <ChevronRight className="w-4 h-4 text-text-muted group-hover:translate-x-1 transition-transform" />
-                                </button>
+                                </button>                                
                             </div>
                         </div>
 

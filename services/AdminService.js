@@ -294,6 +294,72 @@ export class AdminService {
             throw error;
         }
     }
+    /**
+     * Fetches paginated platform-wide transactions
+     */
+    async getPaginatedGlobalActivity(limit = 10, offset = 0) {
+        try {
+            const { data: transactions, error: txError } = await supabase
+                .from('transactions')
+                .select(`
+                    *,
+                    wallet:wallets(user:profiles(email, first_name, last_name))
+                `)
+                .order('created_at', { ascending: false })
+                .range(offset, offset + limit - 1);
+
+            if (txError) throw txError;
+
+            const { count, error: countError } = await supabase
+                .from('transactions')
+                .select('*', { count: 'exact', head: true });
+
+            if (countError) throw countError;
+
+            return {
+                transactions: transactions || [],
+                total: count || 0
+            };
+        } catch (error) {
+            console.error("[AdminService] Error fetching paginated global activity:", error);
+            throw error;
+        }
+    }
+
+    /**
+     * Permanently deletes a user and all associated data.
+     */
+    async deleteUser(userId) {
+        try {
+            // Deletion order to respect FKs (if not handled by cascade)
+            // 1. Delete transactions
+            const { data: wallet } = await supabase
+                .from('wallets')
+                .select('id')
+                .eq('user_id', userId)
+                .single();
+
+            if (wallet) {
+                await supabase.from('transactions').delete().eq('wallet_id', wallet.id);
+                await supabase.from('wallets').delete().eq('id', wallet.id);
+            }
+
+            // 2. Delete verification history
+            await supabase.from('verification_history').delete().eq('user_id', userId);
+
+            // 3. Delete profile
+            await supabase.from('profiles').delete().eq('id', userId);
+
+            // 4. Delete Auth user
+            const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+            if (authError) throw authError;
+
+            return { success: true };
+        } catch (error) {
+            console.error("[AdminService] Error deleting user:", error);
+            throw error;
+        }
+    }
 }
 
 export const adminService = new AdminService();

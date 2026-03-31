@@ -3,9 +3,12 @@
 import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "./AuthContext";
+import { useUI } from "./UIContext";
+import { Menu } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout, isAuthenticated, loading } = useAuth();
+  const { toggleSidebar } = useUI();
 
   const handleLogout = async () => {
     await logout();
@@ -22,14 +25,27 @@ export default function Navbar() {
     >
       <div className="max-w-full mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center group">
-            <img 
-              src="/ZetVerify-landscape-logo.svg" 
-              alt="ZetVerify Logo" 
-              className="h-10 md:h-14 w-auto"
-            />
-          </Link>
+          <div className="flex items-center gap-4">
+            {/* Mobile Menu Toggle */}
+            {isAuthenticated && (
+              <button 
+                onClick={toggleSidebar}
+                className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors"
+                aria-label="Toggle Sidebar"
+              >
+                <Menu className="w-6 h-6 text-slate-700" />
+              </button>
+            )}
+
+            {/* Logo */}
+            <Link href="/" className="flex items-center group">
+              <img 
+                src="/ZetVerify-landscape-logo.svg" 
+                alt="ZetVerify Logo" 
+                className="h-10 md:h-14 w-auto"
+              />
+            </Link>
+          </div>
 
           {/* Right Side - Theme Toggle + Auth */}
           <div className="flex items-center gap-4">

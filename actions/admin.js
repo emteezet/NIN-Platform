@@ -97,3 +97,29 @@ export async function getUserTransactionsAction(userId, limit = 10, offset = 0) 
         return { success: false, error: error.message };
     }
 }
+/**
+ * Server Action: Fetches paginated platform-wide activity
+ */
+export async function getPaginatedGlobalActivityAction(page = 1, pageSize = 10) {
+    try {
+        await requireAdmin();
+        const offset = (page - 1) * pageSize;
+        const result = await adminService.getPaginatedGlobalActivity(pageSize, offset);
+        return { success: true, ...result };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Server Action: Permanently deletes a user
+ */
+export async function deleteUserAction(targetUserId) {
+    try {
+        await requireAdmin();
+        const result = await adminService.deleteUser(targetUserId);
+        return { success: true, ...result };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}

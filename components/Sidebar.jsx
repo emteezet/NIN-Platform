@@ -4,138 +4,166 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
+import { useUI } from "./UIContext";
+import { 
+    LayoutDashboard, 
+    ShieldCheck, 
+    Wallet, 
+    History, 
+    Activity, 
+    User, 
+    ChevronDown, 
+    ChevronRight,
+    ArrowLeft,
+    Users,
+    Shield,
+    X
+} from "lucide-react";
 
 export default function Sidebar() {
-  const [servicesOpen, setServicesOpen] = useState(false);
-  const pathname = usePathname();
-  const { isAuthenticated, loading } = useAuth();
+    const [servicesOpen, setServicesOpen] = useState(false);
+    const pathname = usePathname();
+    const { isAuthenticated, loading } = useAuth();
+    const { isSidebarOpen, closeSidebar } = useUI();
+    const [isAdminMode, setIsAdminMode] = useState(false);
 
-  const menuItems = [
-    { name: "Dashboard", href: "/dashboard", icon: "📊" },
-    {
-      name: "Services",
-      icon: "🔒",
-      subItems: [
-        { name: "Verify NIN", href: "/verify" },
-        { name: "Verify BVN", href: "/verify?type=bvn" },
-      ],
-    },
-    { name: "Wallet", href: "/wallet", icon: "💳" },
-    { name: "Verification History", href: "/history", icon: "📜" },
-    { name: "Transaction", href: "/transactions", icon: "📈" },
-    { name: "Account Info", href: "/account-info", icon: "👤" },
-  ];
+    useEffect(() => {
+        setIsAdminMode(pathname.startsWith('/admin'));
+    }, [pathname]);
 
-  const isActive = (href) => pathname === href;
+    const userMenuItems = [
+        { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+        {
+            name: "Services",
+            icon: <ShieldCheck className="w-5 h-5" />,
+            subItems: [
+                { name: "Verify NIN", href: "/verify" },
+                { name: "Verify BVN", href: "/verify?type=bvn" },
+            ],
+        },
+        { name: "Wallet", href: "/wallet", icon: <Wallet className="w-5 h-5" /> },
+        { name: "Verification History", href: "/history", icon: <History className="w-5 h-5" /> },
+        { name: "Transaction", href: "/transactions", icon: <Activity className="w-5 h-5" /> },
+        { name: "Account Info", href: "/account-info", icon: <User className="w-5 h-5" /> },
+    ];
 
-  // Don't show sidebar if loading or not authenticated
-  if (loading || !isAuthenticated) {
-    return null;
-  }
+    const adminMenuItems = [
+        { name: "Platform Overview", href: "/admin", icon: <LayoutDashboard className="w-5 h-5" /> },
+        { name: "User Management", href: "/admin/users", icon: <Users className="w-5 h-5" /> },
+        { name: "Global Transactions", href: "/admin/transactions", icon: <Activity className="w-5 h-5" /> },
+        { name: "Identity Logs", href: "/admin/verifications", icon: <Shield className="w-5 h-5" /> },
+        { name: "Return to App", href: "/dashboard", icon: <ArrowLeft className="w-5 h-5" /> },
+    ];
 
-  return (
-    <>
-      {/* Sidebar */}
-      <aside
-        className="fixed left-0 top-16 h-[calc(100dvh-4rem)] w-64 transition-all duration-300 ease-in-out hidden md:block"
-        style={{
-          background: "var(--bg-card)",
-          borderRight: "1px solid var(--border-color)",
-          zIndex: 40,
-        }}
-      >
-        <nav className="h-full flex flex-col p-4 space-y-2 overflow-y-auto">
-          {menuItems.map((item) => (
-            <div key={item.name || item.href}>
-              {item.subItems ? (
-                <>
-                  <button
-                    onClick={() => setServicesOpen(!servicesOpen)}
-                    className={`w-full px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between text-sm ${servicesOpen ? 'font-bold' : 'font-medium'}`}
-                    style={{
-                      background: servicesOpen
-                        ? "linear-gradient(135deg, rgba(25, 50, 92, 0.2), rgba(36, 113, 138, 0.15))"
-                        : "transparent",
-                      color: servicesOpen ? "#19325C" : "var(--text-secondary)",
-                      borderLeft: servicesOpen
-                        ? "4px solid #19325C"
-                        : "4px solid transparent",
-                      paddingLeft: servicesOpen ? "12px" : "16px",
-                    }}
-                  >
-                    <span className="flex items-center gap-3">
-                      <span className="text-lg">{item.icon}</span>
-                      <span>{item.name}</span>
-                    </span>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className={`transition-transform duration-300 ${servicesOpen ? "rotate-180" : ""
-                        }`}
-                    >
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
+    const menuItems = isAdminMode ? adminMenuItems : userMenuItems;
 
-                  {servicesOpen && (
-                    <div className="pl-4 mt-1 space-y-1 animate-in">
-                      {item.subItems.map((subItem) => (
-                        <Link
-                          key={subItem.href}
-                          href={subItem.href}
-                          className={`px-4 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm ${isActive(subItem.href) ? 'font-bold' : 'font-normal'}`}
-                          style={{
-                            background: isActive(subItem.href)
-                              ? "linear-gradient(135deg, rgba(25, 50, 92, 0.2), rgba(36, 113, 138, 0.15))"
-                              : "transparent",
-                            color: isActive(subItem.href)
-                              ? "#19325C"
-                              : "var(--text-secondary)",
-                            borderLeft: isActive(subItem.href)
-                              ? "4px solid #19325C"
-                              : "4px solid transparent",
-                            paddingLeft: isActive(subItem.href)
-                              ? "12px"
-                              : "16px",
-                          }}
+    const isActive = (href) => pathname === href;
+
+    if (loading || !isAuthenticated) {
+        return null;
+    }
+
+    return (
+        <>
+            {/* Backdrop for mobile */}
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
+                    onClick={closeSidebar}
+                />
+            )}
+
+            <aside className={`
+                fixed md:static left-0 top-0 h-full 
+                w-64 transition-all duration-300 ease-in-out z-50 md:z-40
+                bg-white border-r border-slate-200
+                ${isSidebarOpen ? 'translate-x-0 shadow-2xl shadow-slate-900/20' : '-translate-x-full md:translate-x-0'}
+            `}>
+                <div className="flex flex-col h-full py-6 px-4">
+                    {/* Mobile Header (Hidden on desktop) */}
+                    <div className="md:hidden flex items-center justify-between mb-8 px-2">
+                        <img 
+                            src="/ZetVerify-landscape-logo.svg" 
+                            alt="Logo" 
+                            className="h-10 w-auto"
+                        />
+                        <button 
+                            onClick={closeSidebar}
+                            className="p-2 bg-slate-50 rounded-xl text-slate-500"
                         >
-                          <span>•</span>
-                          <span>{subItem.name}</span>
-                        </Link>
-                      ))}
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                  )}
-                </>
-              ) : (
-                <Link
-                  href={item.href}
-                  className={`px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm ${isActive(item.href) ? 'font-bold' : 'font-medium'}`}
-                  style={{
-                    background: isActive(item.href)
-                      ? "linear-gradient(135deg, rgba(25, 50, 92, 0.2), rgba(36, 113, 138, 0.15))"
-                      : "transparent",
-                    color: isActive(item.href)
-                      ? "#19325C"
-                      : "var(--text-secondary)",
-                    borderLeft: isActive(item.href)
-                      ? "4px solid #19325C"
-                      : "4px solid transparent",
-                    paddingLeft: isActive(item.href) ? "12px" : "16px",
-                  }}
-                >
-                  <span className="text-lg">{item.icon}</span>
-                  <span>{item.name}</span>
-                </Link>
-              )}
-            </div>
-          ))}
-        </nav>
-      </aside>
 
-    </>
-  );
+                    {isAdminMode && (
+                        <div className="px-4 mb-6">
+                            <div className="p-4 bg-slate-900 rounded-2xl text-white">
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-500 mb-1">Administrator</p>
+                                <h2 className="text-sm font-bold opacity-90">Control Center</h2>
+                            </div>
+                        </div>
+                    )}
+
+                    <nav className="flex-1 space-y-1.5 overflow-y-auto custom-scrollbar pr-2 pb-24 md:pb-6">
+                        {menuItems.map((item) => (
+                            <div key={item.name}>
+                                {item.subItems ? (
+                                    <>
+                                        <button
+                                            onClick={() => setServicesOpen(!servicesOpen)}
+                                            className={`w-full px-4 py-3.5 rounded-2xl transition-all flex items-center justify-between text-sm group ${
+                                                servicesOpen ? 'bg-slate-50 text-slate-900' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3.5">
+                                                <div className={`${servicesOpen ? 'text-primary-600' : 'text-slate-400 group-hover:text-primary-600'}`}>
+                                                    {item.icon}
+                                                </div>
+                                                <span className="font-bold tracking-tight">{item.name}</span>
+                                            </div>
+                                            {servicesOpen ? <ChevronDown className="w-4 h-4 opacity-50" /> : <ChevronRight className="w-4 h-4 opacity-30" />}
+                                        </button>
+
+                                        {servicesOpen && (
+                                            <div className="mt-1 ml-4 pl-4 border-l-2 border-slate-100 space-y-1">
+                                                {item.subItems.map((subItem) => (
+                                                    <Link
+                                                        key={subItem.href}
+                                                        href={subItem.href}
+                                                        onClick={() => closeSidebar()}
+                                                        className={`px-4 py-3 rounded-xl transition-all flex items-center gap-3 text-sm ${
+                                                            isActive(subItem.href) 
+                                                                ? 'bg-primary-50 text-primary-600 font-black' 
+                                                                : 'text-slate-500 hover:text-slate-900'
+                                                        }`}
+                                                    >
+                                                        <span className="font-bold tracking-tight">{subItem.name}</span>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <Link
+                                        href={item.href}
+                                        onClick={() => closeSidebar()}
+                                        className={`px-4 py-3.5 rounded-2xl transition-all flex items-center gap-3.5 text-sm group ${
+                                            isActive(item.href)
+                                                ? (isAdminMode ? 'bg-slate-900 text-white shadow-xl shadow-slate-200' : 'bg-primary-50 text-primary-600 shadow-sm shadow-primary-100')
+                                                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        <div className={`${isActive(item.href) ? (isAdminMode ? 'text-primary-500' : 'text-primary-600') : 'text-slate-400 group-hover:text-primary-600'}`}>
+                                            {item.icon}
+                                        </div>
+                                        <span className={`tracking-tight ${isActive(item.href) ? 'font-black' : 'font-bold'}`}>{item.name}</span>
+                                    </Link>
+                                )}
+                            </div>
+                        ))}
+                    </nav>
+                </div>
+            </aside>
+        </>
+    );
 }

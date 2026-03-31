@@ -15,14 +15,16 @@ import {
     CheckCircle2,
     XCircle,
     History,
-    ChevronRight
+    ChevronRight,
+    Trash2
 } from "lucide-react";
 import { 
     getAllUsersAction, 
     updateUserWalletAction, 
     updateUserStatusAction, 
     getUserActivityAction,
-    getUserTransactionsAction 
+    getUserTransactionsAction,
+    deleteUserAction 
 } from "@/actions/admin";
 import { useNotification } from "@/components/NotificationContext";
 
@@ -45,6 +47,8 @@ export default function AdminUsersPage() {
     const [statusModalUser, setStatusModalUser] = useState(null);
     const [newStatus, setNewStatus] = useState("ACTIVE");
     const [statusReason, setStatusReason] = useState("");
+    // Delete Modal State
+    const [deleteModalUser, setDeleteModalUser] = useState(null);
 
     // Activity Modal State
     const [activityUser, setActivityUser] = useState(null);
@@ -123,6 +127,20 @@ export default function AdminUsersPage() {
             showNotification(`User status updated to ${newStatus}`, "success");
             setStatusModalUser(null);
             setStatusReason("");
+            fetchUsers();
+        } else {
+            showNotification(result.error, "error");
+        }
+        setIsSubmitting(false);
+    };
+
+    const handleDeleteUser = async () => {
+        if (!deleteModalUser) return;
+        setIsSubmitting(true);
+        const result = await deleteUserAction(deleteModalUser.id);
+        if (result.success) {
+            showNotification(`User ${deleteModalUser.email} has been permanently deleted`, "success");
+            setDeleteModalUser(null);
             fetchUsers();
         } else {
             showNotification(result.error, "error");
@@ -218,14 +236,12 @@ export default function AdminUsersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                                                u.status === 'SUSPENDED' ? 'bg-amber-50 text-amber-600' : 
-                                                u.status === 'BLOCKED' ? 'bg-rose-50 text-rose-600' : 
-                                                'bg-emerald-50 text-emerald-600'
+                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm ${
+                                                u.status === 'SUSPENDED' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 
+                                                'bg-emerald-50 text-emerald-600 border border-emerald-100'
                                             }`}>
-                                                {u.status === 'SUSPENDED' ? <ShieldAlert className="w-3 h-3" /> : 
-                                                 u.status === 'BLOCKED' ? <XCircle className="w-3 h-3" /> : 
-                                                 <CheckCircle2 className="w-3 h-3" />} 
+                                                {u.status === 'SUSPENDED' ? <ShieldAlert className="w-3.5 h-3.5" /> : 
+                                                 <CheckCircle2 className="w-3.5 h-3.5" />} 
                                                 {u.status || 'ACTIVE'}
                                             </span>
                                         </td>
@@ -262,11 +278,18 @@ export default function AdminUsersPage() {
                                                         setNewStatus(u.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE');
                                                     }}
                                                     className={`p-2 rounded-lg transition-colors ${
-                                                        u.status === 'ACTIVE' ? 'hover:bg-rose-50 text-rose-500' : 'hover:bg-emerald-50 text-emerald-500'
+                                                        u.status === 'ACTIVE' ? 'hover:bg-amber-50 text-amber-500' : 'hover:bg-emerald-50 text-emerald-500'
                                                     }`}
                                                     title={u.status === 'ACTIVE' ? "Suspend User" : "Activate User"}
                                                 >
-                                                    {u.status === 'ACTIVE' ? <XCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                                                    {u.status === 'ACTIVE' ? <ShieldAlert className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+                                                </button>
+                                                <button 
+                                                    onClick={() => setDeleteModalUser(u)}
+                                                    className="p-2 hover:bg-rose-50 text-rose-500 rounded-lg transition-colors group"
+                                                    title="Delete User"
+                                                >
+                                                    <Trash2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                                 </button>
                                             </div>
                                         </td>
@@ -382,7 +405,6 @@ export default function AdminUsersPage() {
                                 >
                                     <option value="ACTIVE">ACTIVATE ACCOUNT</option>
                                     <option value="SUSPENDED">SUSPEND ACCOUNT</option>
-                                    <option value="BLOCKED">BLOCK PERMANENTLY</option>
                                 </select>
                             </div>
 
@@ -593,6 +615,41 @@ export default function AdminUsersPage() {
                                 )}
                             </div>
                         ) : null}
+                    </div>
+                </div>
+            )}
+            {/* Delete Confirmation Modal */}
+            {deleteModalUser && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-md p-10 shadow-2xl animate-in zoom-in duration-300 text-center border-t-8 border-rose-500">
+                        <div className="mx-auto w-20 h-20 rounded-3xl bg-rose-50 text-rose-600 flex items-center justify-center mb-8 rotate-3 shadow-lg shadow-rose-100">
+                            <Trash2 className="w-10 h-10" />
+                        </div>
+                        
+                        <h2 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">
+                            Permanent Deletion?
+                        </h2>
+                        <p className="text-sm text-slate-500 mb-10 leading-relaxed px-4">
+                            You are about to permanently delete <span className="font-bold text-slate-900 underline decoration-rose-200 decoration-4">{deleteModalUser.email}</span>. This action is irreversible and removes all account history.
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                            <button 
+                                onClick={handleDeleteUser}
+                                disabled={isSubmitting}
+                                className="w-full py-5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black shadow-xl shadow-rose-200 transition-all flex items-center justify-center gap-2 group active:scale-95 disabled:opacity-50"
+                            >
+                                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5 group-hover:animate-bounce" />}
+                                DELETE PERMANENTLY
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => setDeleteModalUser(null)}
+                                className="w-full py-4 text-sm font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-widest"
+                            >
+                                I changed my mind
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
