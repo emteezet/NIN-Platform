@@ -14,9 +14,16 @@ import {
     Loader2,
     CheckCircle2,
     XCircle,
-    History
+    History,
+    ChevronRight
 } from "lucide-react";
-import { getAllUsersAction, updateUserWalletAction } from "@/actions/admin";
+import { 
+    getAllUsersAction, 
+    updateUserWalletAction, 
+    updateUserStatusAction, 
+    getUserActivityAction,
+    getUserTransactionsAction 
+} from "@/actions/admin";
 import { useNotification } from "@/components/NotificationContext";
 
 export default function AdminUsersPage() {
@@ -33,6 +40,18 @@ export default function AdminUsersPage() {
     const [adjustType, setAdjustType] = useState("FUNDING");
     const [adjustReason, setAdjustReason] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Status Modal State
+    const [statusModalUser, setStatusModalUser] = useState(null);
+    const [newStatus, setNewStatus] = useState("ACTIVE");
+    const [statusReason, setStatusReason] = useState("");
+
+    // Activity Modal State
+    const [activityUser, setActivityUser] = useState(null);
+    const [activityData, setActivityData] = useState(null);
+    const [loadingActivity, setLoadingActivity] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [activeTab, setActiveTab] = useState("TRANSACTIONS");
 
     const fetchUsers = async () => {
         setFetching(true);
@@ -77,6 +96,52 @@ export default function AdminUsersPage() {
             showNotification(result.error, "error");
         }
         setIsSubmitting(false);
+    };
+
+    const handleLoadMore = async () => {
+        if (!activityData || loadingMore) return;
+        
+        setLoadingMore(true);
+        const offset = activityData.transactions.length;
+        const res = await getUserTransactionsAction(activityUser.id, 10, offset);
+        
+        if (res.success) {
+            setActivityData(prev => ({
+                ...prev,
+                transactions: [...prev.transactions, ...res.data.transactions],
+                hasMoreTransactions: res.data.hasMore
+            }));
+        }
+        setLoadingMore(false);
+    };
+
+    const handleUpdateStatus = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        const result = await updateUserStatusAction(statusModalUser.id, newStatus, statusReason);
+        if (result.success) {
+            showNotification(`User status updated to ${newStatus}`, "success");
+            setStatusModalUser(null);
+            setStatusReason("");
+            fetchUsers();
+        } else {
+            showNotification(result.error, "error");
+        }
+        setIsSubmitting(false);
+    };
+
+    const handleViewActivity = async (user) => {
+        setActivityUser(user);
+        setLoadingActivity(true);
+        setActiveTab("TRANSACTIONS");
+        const result = await getUserActivityAction(user.id);
+        if (result.success) {
+            setActivityData(result.data);
+        } else {
+            showNotification(result.error, "error");
+            setActivityUser(null);
+        }
+        setLoadingActivity(false);
     };
 
     const filteredUsers = users.filter(u => 
@@ -153,8 +218,15 @@ export default function AdminUsersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600">
-                                                <CheckCircle2 className="w-3 h-3" /> ACTIVE
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                                u.status === 'SUSPENDED' ? 'bg-amber-50 text-amber-600' : 
+                                                u.status === 'BLOCKED' ? 'bg-rose-50 text-rose-600' : 
+                                                'bg-emerald-50 text-emerald-600'
+                                            }`}>
+                                                {u.status === 'SUSPENDED' ? <ShieldAlert className="w-3 h-3" /> : 
+                                                 u.status === 'BLOCKED' ? <XCircle className="w-3 h-3" /> : 
+                                                 <CheckCircle2 className="w-3 h-3" />} 
+                                                {u.status || 'ACTIVE'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5">
@@ -178,10 +250,23 @@ export default function AdminUsersPage() {
                                                     <Wallet className="w-5 h-5" />
                                                 </button>
                                                 <button 
+                                                    onClick={() => handleViewActivity(u)}
                                                     className="p-2 hover:bg-bg-secondary text-text-muted rounded-lg transition-colors"
-                                                    title="View History"
+                                                    title="View Activity"
                                                 >
                                                     <History className="w-5 h-5" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => {
+                                                        setStatusModalUser(u);
+                                                        setNewStatus(u.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE');
+                                                    }}
+                                                    className={`p-2 rounded-lg transition-colors ${
+                                                        u.status === 'ACTIVE' ? 'hover:bg-rose-50 text-rose-500' : 'hover:bg-emerald-50 text-emerald-500'
+                                                    }`}
+                                                    title={u.status === 'ACTIVE' ? "Suspend User" : "Activate User"}
+                                                >
+                                                    {u.status === 'ACTIVE' ? <XCircle className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
                                                 </button>
                                             </div>
                                         </td>
@@ -264,6 +349,250 @@ export default function AdminUsersPage() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Status Update Modal */}
+            {statusModalUser && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-300 text-center">
+                        <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-6 ${
+                            newStatus === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                        }`}>
+                            {newStatus === 'ACTIVE' ? <CheckCircle2 className="w-8 h-8" /> : <ShieldAlert className="w-8 h-8" />}
+                        </div>
+                        
+                        <h2 className="text-xl font-black text-text-primary mb-2">
+                            {newStatus === 'ACTIVE' ? 'Activate User?' : 'Suspend/Block User?'}
+                        </h2>
+                        <p className="text-sm text-text-muted mb-8">
+                            {newStatus === 'ACTIVE' 
+                                ? `Are you sure you want to restore access for ${statusModalUser.email}?` 
+                                : `Prevent ${statusModalUser.email} from accessing verification services.`}
+                        </p>
+
+                        <form onSubmit={handleUpdateStatus} className="space-y-6 text-left">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Select Action</label>
+                                <select 
+                                    value={newStatus}
+                                    onChange={(e) => setNewStatus(e.target.value)}
+                                    className="input-field h-12"
+                                >
+                                    <option value="ACTIVE">ACTIVATE ACCOUNT</option>
+                                    <option value="SUSPENDED">SUSPEND ACCOUNT</option>
+                                    <option value="BLOCKED">BLOCK PERMANENTLY</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Reason (Optional)</label>
+                                <textarea 
+                                    value={statusReason}
+                                    onChange={(e) => setStatusReason(e.target.value)}
+                                    placeholder="Brief explanation for records..."
+                                    className="input-field min-h-[80px] py-4"
+                                />
+                            </div>
+
+                            <div className="flex gap-4 pt-4">
+                                <button 
+                                    type="button"
+                                    onClick={() => setStatusModalUser(null)}
+                                    className="flex-1 py-4 text-sm font-bold text-text-muted hover:text-text-primary transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className={`flex-2 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 text-white shadow-lg transition-all active:scale-95 ${
+                                        newStatus === 'ACTIVE' ? 'bg-emerald-600 shadow-emerald-200' : 'bg-rose-600 shadow-rose-200'
+                                    }`}
+                                >
+                                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Activity Modal */}
+            {activityUser && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[85vh] p-10 shadow-2xl animate-in zoom-in duration-300 flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="p-4 bg-slate-100 rounded-2xl">
+                                    <History className="w-6 h-6 text-text-primary" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-black text-text-primary tracking-tight">User Activity Details</h2>
+                                    <p className="text-sm text-text-muted">Monitoring logs for {activityUser.email}</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setActivityUser(null)}
+                                className="p-3 hover:bg-bg-secondary rounded-2xl text-text-muted transition-colors"
+                            >
+                                <ChevronLeft className="w-6 h-6 rotate-180" />
+                            </button>
+                        </div>
+
+                        {loadingActivity ? (
+                            <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                                <Loader2 className="w-12 h-12 animate-spin text-primary-500" />
+                                <p className="text-text-muted animate-pulse font-medium">Fetching activity data...</p>
+                            </div>
+                        ) : activityData ? (
+                            <div className="flex-1 overflow-y-auto pr-2 space-y-10 custom-scrollbar">
+                                {/* Summary Cards */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="p-6 rounded-3xl bg-primary-50/50 border border-primary-100">
+                                        <p className="text-[10px] font-bold text-primary-600 uppercase tracking-widest mb-1">Total Spent</p>
+                                        <p className="text-3xl font-black text-primary-900">₦{activityData.stats.totalSpent.toLocaleString()}</p>
+                                    </div>
+                                    <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Verification Volume</p>
+                                        <p className="text-3xl font-black text-slate-900">{activityData.stats.totalVerifications} Records</p>
+                                    </div>
+                                </div>
+
+                                {/* Tabs Switcher */}
+                                <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl w-fit">
+                                    <button 
+                                        onClick={() => setActiveTab("TRANSACTIONS")}
+                                        className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                                            activeTab === "TRANSACTIONS" ? 'bg-white text-primary-600 shadow-sm' : 'text-text-muted hover:text-text-primary'
+                                        }`}
+                                    >
+                                        Financial Ledger
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab("VERIFICATIONS")}
+                                        className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                                            activeTab === "VERIFICATIONS" ? 'bg-white text-primary-600 shadow-sm' : 'text-text-muted hover:text-text-primary'
+                                        }`}
+                                    >
+                                        Identity History
+                                    </button>
+                                </div>
+
+                                {/* Tab Content */}
+                                {activeTab === "TRANSACTIONS" ? (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="flex items-center gap-2 mb-2 px-1">
+                                            <Wallet className="w-4 h-4 text-primary-500" />
+                                            <h3 className="text-xs font-black text-text-primary uppercase tracking-wider">Recent Transactions</h3>
+                                        </div>
+                                        <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                                            <table className="w-full text-left text-xs">
+                                                <thead>
+                                                    <tr className="bg-slate-50/80 text-text-muted font-bold uppercase tracking-tighter">
+                                                        <th className="px-6 py-4">Type</th>
+                                                        <th className="px-6 py-4">Amount</th>
+                                                        <th className="px-6 py-4">Reference</th>
+                                                        <th className="px-6 py-4">Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {activityData.transactions.length > 0 ? activityData.transactions.map(tx => (
+                                                        <tr key={tx.id} className="hover:bg-slate-50/30">
+                                                            <td className="px-6 py-5 font-bold">{tx.type}</td>
+                                                            <td className={`px-6 py-5 font-black ${Number(tx.amount) >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                                                {Number(tx.amount) >= 0 ? '+' : '-'}₦{Math.abs(Number(tx.amount)).toLocaleString()}
+                                                            </td>
+                                                            <td className="px-6 py-5 text-text-muted font-mono">{tx.reference?.slice(0, 15)}...</td>
+                                                            <td className="px-6 py-5 text-text-muted">
+                                                                {new Date(tx.created_at).toLocaleDateString()}
+                                                            </td>
+                                                        </tr>
+                                                    )) : (
+                                                        <tr>
+                                                            <td colSpan="4" className="px-6 py-20 text-center">
+                                                                <div className="flex flex-col items-center gap-2 text-text-muted">
+                                                                    <Wallet className="w-10 h-10 opacity-20" />
+                                                                    <p className="italic">No transactions found</p>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Load More Button */}
+                                        {activityData.hasMoreTransactions && (
+                                            <div className="flex justify-center pt-2">
+                                                <button
+                                                    onClick={handleLoadMore}
+                                                    disabled={loadingMore}
+                                                    className="px-8 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-primary-600 hover:border-primary-200 hover:bg-primary-50/30 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                                                >
+                                                    {loadingMore ? (
+                                                        <>
+                                                            <span className="w-3 h-3 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"></span>
+                                                            Loading...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ChevronRight className="w-3 h-3 rotate-90" />
+                                                            Load More History
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                        <div className="flex items-center gap-2 mb-2 px-1">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                            <h3 className="text-xs font-black text-text-primary uppercase tracking-wider">Verification Log</h3>
+                                        </div>
+                                        <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                                            <table className="w-full text-left text-xs">
+                                                <thead>
+                                                    <tr className="bg-slate-50/80 text-text-muted font-bold uppercase tracking-tighter">
+                                                        <th className="px-6 py-4">Identity Number</th>
+                                                        <th className="px-6 py-4">Service</th>
+                                                        <th className="px-6 py-4">Slip Type</th>
+                                                        <th className="px-6 py-4">Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-50">
+                                                    {activityData.verifications.length > 0 ? activityData.verifications.map(v => (
+                                                        <tr key={v.id} className="hover:bg-slate-50/30">
+                                                            <td className="px-6 py-5">
+                                                                <div className="font-black text-primary-600 text-sm">{v.decrypted_identifier || 'N/A'}</div>
+                                                            </td>
+                                                            <td className="px-6 py-5">
+                                                                <div className="font-bold text-text-primary capitalize">{v.type?.replace('_VERIFY', '').replace('_', ' ').toLowerCase()}</div>
+                                                            </td>
+                                                            <td className="px-6 py-5 uppercase text-[10px] font-black">{v.slip_type || 'STANDARD'}</td>
+                                                            <td className="px-6 py-5 text-text-muted">
+                                                                {new Date(v.created_at).toLocaleDateString()}
+                                                            </td>
+                                                        </tr>
+                                                    )) : (
+                                                        <tr>
+                                                            <td colSpan="4" className="px-6 py-20 text-center">
+                                                                <div className="flex flex-col items-center gap-2 text-text-muted">
+                                                                    <CheckCircle2 className="w-10 h-10 opacity-20" />
+                                                                    <p className="italic">No verification records found</p>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             )}

@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { walletService } from "../services/WalletService";
 import { paystackService } from "../services/PaystackService";
-import { requireAuth } from "../lib/auth/session";
+import { requireAuth, requireActiveUser } from "../lib/auth/session";
 
 /**
  * Server Action: Fetches the current user balance
@@ -25,7 +25,7 @@ export async function getBalanceAction() {
  */
 export async function initializePaymentAction(amount) {
     try {
-        const user = await requireAuth();
+        const user = await requireActiveUser();
         const headerList = await headers();
         const host = headerList.get("host");
         const protocol = host.includes("localhost") ? "http" : "https";
@@ -52,7 +52,7 @@ export async function initializePaymentAction(amount) {
  */
 export async function verifyPaymentAction(reference) {
     try {
-        const user = await requireAuth();
+        const user = await requireActiveUser();
         const response = await paystackService.verifyTransaction(reference);
         
         if (response.status && response.data.status === 'success') {

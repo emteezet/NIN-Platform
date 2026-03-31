@@ -1,7 +1,7 @@
 "use server";
 
 import { identityService } from "../services/IdentityService";
-import { requireAuth } from "../lib/auth/session";
+import { requireActiveUser } from "../lib/auth/session";
 
 /**
  * Server Action: Verifies identity (NIN/BVN)
@@ -10,7 +10,7 @@ import { requireAuth } from "../lib/auth/session";
  */
 export async function verifyIdentityAction(type, value) {
     try {
-        const user = await requireAuth();
+        const user = await requireActiveUser();
         let result;
         if (type === 'NIN') {
             result = await identityService.verifyNin(user.id, value);
