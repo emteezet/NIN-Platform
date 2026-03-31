@@ -22,6 +22,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+database_setup.sql
 
 # local env files
 .env*.local
