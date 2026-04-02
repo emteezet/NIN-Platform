@@ -46,7 +46,8 @@ export default function DashboardVerifyPage() {
         try {
             const { endpoint, data } = queryPayload;
 
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: sessionData } = await supabase.auth.getSession();
+            const session = sessionData?.session;
             const accessToken = session?.access_token;
 
             if (!accessToken) {

@@ -67,7 +67,8 @@ function BVNContent() {
 
         // 2. Fallback: Authenticate and fetch
         if (!resultData) {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: sessionData } = await supabase.auth.getSession();
+            const session = sessionData?.session;
             const token = session?.access_token;
 
             const controller = new AbortController();

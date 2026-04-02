@@ -101,11 +101,11 @@ export async function proxy(request) {
     // Adjust this if you use external fonts/scripts like Google Fonts or Paystack
     headers.set('Content-Security-Policy', 
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.paystack.com; " +
+        "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.paystack.com https://vercel.live https://*.vercel.live; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "img-src 'self' data: https://*.supabase.co https://*.paystack.com; " +
         "font-src 'self' https://fonts.gstatic.com; " +
-        "connect-src 'self' https://*.supabase.co https://*.paystack.com; " +
+        "connect-src 'self' https://*.supabase.co https://*.paystack.com https://fonts.googleapis.com https://fonts.gstatic.com https://vercel.live https://*.vercel.live https://vitals.vercel-insights.com; " +
         "frame-src 'self' https://checkout.paystack.com;"
     );
 

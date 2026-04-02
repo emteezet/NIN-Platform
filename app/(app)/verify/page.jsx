@@ -152,7 +152,8 @@ function HubContent() {
     try {
       // 1. Get authentication session
       const { supabase } = await import("@/lib/supabase/client");
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
       const token = session?.access_token;
 
       if (!token) {
