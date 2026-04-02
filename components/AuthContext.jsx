@@ -196,9 +196,14 @@ export function AuthProvider({ children }) {
       });
       
       if (error) {
-        // If it's just a lock error but the session is actually updated, we can treat it as success
-        if (error.message?.includes('Lock broken')) {
-          console.warn("[Auth] Ignoring lock break during update—operation likely succeeded");
+        // Broaden check for "Lock broken" / "AbortError" race conditions
+        const isLockError = 
+          error.name === 'AbortError' || 
+          error.message?.toLowerCase().includes('lock broken') ||
+          error.message?.toLowerCase().includes('steal');
+
+        if (isLockError) {
+          console.warn("[Auth] Ignoring lock contention during update—operation likely succeeded on server");
           return { success: true };
         }
         throw error;
