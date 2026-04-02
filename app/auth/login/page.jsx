@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const { login } = useAuth();
   const searchParams = useSearchParams();
@@ -261,5 +260,20 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex items-center justify-center bg-white/50 backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-[#19325C]" />
+          <p className="text-sm font-bold text-[#19325C] animate-pulse uppercase tracking-widest">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

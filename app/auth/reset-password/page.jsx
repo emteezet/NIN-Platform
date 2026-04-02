@@ -55,9 +55,8 @@ export default function ResetPasswordPage() {
           }}
         >
           <div className="text-center mb-10">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
-              success ? 'bg-emerald-50 text-emerald-600' : 'bg-primary-50 text-primary-600'
-            }`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${success ? 'bg-emerald-50 text-emerald-600' : 'bg-primary-50 text-primary-600'
+              }`}>
               {success ? <CheckCircle2 className="w-8 h-8" /> : <Lock className="w-8 h-8" />}
             </div>
             <h1
@@ -70,8 +69,8 @@ export default function ResetPasswordPage() {
               className="text-sm mt-3"
               style={{ color: "var(--text-secondary)" }}
             >
-              {success 
-                ? "Your password has been updated. Redirecting to login..." 
+              {success
+                ? "Your password has been updated. Redirecting to login..."
                 : "Create a strong new password for your account."}
             </p>
           </div>
