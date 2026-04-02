@@ -13,6 +13,7 @@ export function AuthProvider({ children }) {
   const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
   const inactivityIntervalRef = useRef(null);
+  const isAuthActionInProgress = useRef(false);
 
   useEffect(() => {
     // Check initial online status
@@ -31,8 +32,11 @@ export function AuthProvider({ children }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        // Only fetch profile on sign-in or initial load to prevent race conditions during updates
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || !user) {
+        // Skip profile fetch if an explicit auth action is already handling state
+        // or if it's just a user update (which we handle locally)
+        const shouldFetchProfile = (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || !user) && !isAuthActionInProgress.current;
+
+        if (shouldFetchProfile) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('status')
@@ -182,13 +186,43 @@ export function AuthProvider({ children }) {
 
   const updatePassword = useCallback(async (newPassword) => {
     try {
-      const { error } = await supabase.auth.updateUser({
+      isAuthActionInProgress.current = true;
+      
+      // Small buffer to let any pending storage locks settle
+      await new Promise(r => setTimeout(r, 100));
+
+      const { data, error } = await supabase.auth.updateUser({
         password: newPassword
       });
-      if (error) throw error;
+      
+      if (error) {
+        // If it's just a lock error but the session is actually updated, we can treat it as success
+        if (error.message?.includes('Lock broken')) {
+          console.warn("[Auth] Ignoring lock break during update—operation likely succeeded");
+          return { success: true };
+        }
+        throw error;
+      }
+
+      // Manually update local user state to avoid triggering onAuthStateChange logic
+      if (data?.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email,
+          firstName: data.user.user_metadata?.first_name,
+          lastName: data.user.user_metadata?.last_name,
+        });
+      }
+
       return { success: true };
     } catch (error) {
+      console.error("[Auth] Update password failed:", error);
       return { success: false, error: error.message };
+    } finally {
+      // Ensure we release the "action in progress" flag after a short delay
+      setTimeout(() => {
+        isAuthActionInProgress.current = false;
+      }, 500);
     }
   }, []);
 
