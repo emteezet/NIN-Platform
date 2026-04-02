@@ -30,6 +30,20 @@ export function AuthProvider({ children }) {
         if (error) throw error;
 
         if (session?.user) {
+          // Verify status
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('status')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.status && profile.status !== 'ACTIVE') {
+            console.warn("[Auth] Restricting initial session for status:", profile.status);
+            await supabase.auth.signOut();
+            setUser(null);
+            return;
+          }
+
           setUser({
             id: session.user.id,
             email: session.user.email,
@@ -47,8 +61,22 @@ export function AuthProvider({ children }) {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
+        // Verify status before setting user
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('status')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.status && profile.status !== 'ACTIVE') {
+          console.warn("[Auth] Restricting access for status:", profile.status);
+          await supabase.auth.signOut();
+          setUser(null);
+          return;
+        }
+
         setUser({
           id: session.user.id,
           email: session.user.email,
@@ -107,6 +135,20 @@ export function AuthProvider({ children }) {
       });
 
       if (error) throw error;
+
+      // Verify status immediately after login
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('status, suspension_reason')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      if (profile?.status && profile.status !== 'ACTIVE') {
+        await supabase.auth.signOut();
+        throw new Error(profile.suspension_reason || `Your account is ${profile.status.toLowerCase()}. Please contact support.`);
+      }
 
       return { success: true, user: data.user };
     } catch (error) {

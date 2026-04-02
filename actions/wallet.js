@@ -10,7 +10,7 @@ import { requireAuth, requireActiveUser } from "../lib/auth/session";
  */
 export async function getBalanceAction() {
     try {
-        const user = await requireAuth();
+        const user = await requireActiveUser();
         const balance = await walletService.getBalance(user.id);
         return { success: true, balance };
     } catch (error) {
@@ -88,7 +88,7 @@ export async function verifyPaymentAction(reference) {
  */
 export async function getTransactionsAction(limit = 10) {
     try {
-        const user = await requireAuth();
+        const user = await requireActiveUser();
         const transactions = await walletService.getTransactions(user.id, limit);
         return { success: true, transactions };
     } catch (error) {
