@@ -29,21 +29,23 @@ export function AuthProvider({ children }) {
     // This avoids the "Lock broken" error caused by competing getSession calls
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        // Verify status before setting user
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('status')
-          .eq('id', session.user.id)
-          .single();
+        // Only fetch profile on sign-in or initial load to prevent race conditions during updates
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || !user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('status')
+            .eq('id', session.user.id)
+            .single();
 
-        if (profile?.status && profile.status !== 'ACTIVE') {
-          console.warn("[Auth] Restricting access for status:", profile.status);
-          await supabase.auth.signOut();
-          setUser(null);
-          setLoading(false);
-          return;
+          if (profile?.status && profile.status !== 'ACTIVE') {
+            console.warn("[Auth] Restricting access for status:", profile.status);
+            await supabase.auth.signOut();
+            setUser(null);
+            setLoading(false);
+            return;
+          }
         }
 
         setUser({

@@ -28,20 +28,23 @@ export default function ResetPasswordPage() {
       return setError("Password must be at least 6 characters");
     }
 
-    setError("");
-    setLoading(true);
+    try {
+      const result = await updatePassword(newPassword);
 
-    const result = await updatePassword(newPassword);
-
-    if (result.success) {
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/auth/login");
-      }, 3000);
-    } else {
-      setError(result.error);
+      if (result.success) {
+        setSuccess(true);
+        // Start redirect timer
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 3000);
+      } else {
+        setError(result.error);
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -66,12 +69,12 @@ export default function ResetPasswordPage() {
               {success ? "Success!" : "Reset Password"}
             </h1>
             <p
-              className="text-sm mt-3"
+              className="text-sm mt-3 leading-relaxed"
               style={{ color: "var(--text-secondary)" }}
             >
               {success
-                ? "Your password has been updated. Redirecting to login..."
-                : "Create a strong new password for your account."}
+                ? "Your password has been updated successfully. We are redirecting you to the login page now."
+                : "Create a strong new password for your account to regain access."}
             </p>
           </div>
 
