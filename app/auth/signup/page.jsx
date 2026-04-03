@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signup } = useAuth();
+  const { signup, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -17,6 +18,13 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   });
+
+  // Auth Guard: Redirect already authenticated users
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,6 +60,8 @@ export default function SignupPage() {
       setLoading(false);
     }
   };
+
+  if (authLoading) return null;
 
   return (
     <div className="h-screen overflow-y-auto">
@@ -246,14 +256,18 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 rounded-lg font-medium text-white transition-all disabled:opacity-50"
+            className="w-full h-11 py-2 rounded-lg font-medium text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             style={{
               background: loading
                 ? "rgba(25, 50, 92, 0.5)"
                 : "linear-gradient(135deg, #19325C, #24718A)",
             }}
           >
-            {loading ? "Creating account..." : "Sign Up"}
+            {loading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              "Sign Up"
+            )}
           </button>
         </form>
 
@@ -280,7 +294,7 @@ export default function SignupPage() {
           Already have an account?{" "}
           <Link
             href="/auth/login"
-            className="font-medium text-primary-600 hover:text-primary-700 transition-colors"
+            className="font-medium text-[#24718A] hover:opacity-80 transition-colors"
           >
             Sign in here
           </Link>

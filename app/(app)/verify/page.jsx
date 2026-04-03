@@ -297,7 +297,18 @@ function HubContent() {
           ))}
         </div>
 
-        <form onSubmit={handleVerify} className="p-6 space-y-5 animate-in">
+        {serviceType === "bvn" ? (
+          <div className="p-12 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">BVN Service Temporarily Unavailable</h3>
+            <p className="text-sm text-slate-500 max-w-xs mx-auto leading-relaxed">
+              We are currently carrying out maintenance on our BVN verification systems. Please check back later or use NIN verification.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleVerify} className="p-6 space-y-5 animate-in">
 
           {/* Search Method Tabs */}
           <div
@@ -504,6 +515,7 @@ function HubContent() {
             )}
           </button>
         </form>
+        )}
       </div>
 
       {/* Tip */}

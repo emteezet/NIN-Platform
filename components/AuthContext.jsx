@@ -11,8 +11,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isRecoverySession, setIsRecoverySession] = useState(false);
   const router = useRouter();
   const inactivityIntervalRef = useRef(null);
+  const isAuthActionInProgress = useRef(false);
+  // Ref mirror of loggingOut — avoids stale closures in useCallback deps.
+  const loggingOutRef = useRef(false);
+  // True when the app is mounted on the password-reset page (set once on mount).
+  // Used to skip account-status checks during the reset flow.
+  const isOnResetPageRef = useRef(false);
 
   useEffect(() => {
     // Check initial online status
@@ -24,26 +31,43 @@ export function AuthProvider({ children }) {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Initial loading state is true by default
-    // We rely solely on onAuthStateChange to catch the initial session
-    // This avoids the "Lock broken" error caused by competing getSession calls
+    // Capture whether we are on the reset-password page at mount time (before the
+    // hash is cleared). This lets us treat any SIGNED_IN event on that page as a
+    // recovery event and skip the account-status check.
+    isOnResetPageRef.current =
+      window.location.pathname.includes('/auth/reset-password') ||
+      window.location.hash.includes('type=recovery');
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        // Verify status before setting user
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('status')
-          .eq('id', session.user.id)
-          .single();
+        // An event is a recovery if Supabase says so OR if we're on the reset page
+        const isRecovery = event === 'PASSWORD_RECOVERY' || isOnResetPageRef.current;
+        if (isRecovery) {
+          setIsRecoverySession(true);
+        }
 
-        if (profile?.status && profile.status !== 'ACTIVE') {
-          console.warn("[Auth] Restricting access for status:", profile.status);
-          await supabase.auth.signOut();
-          setUser(null);
-          setLoading(false);
-          return;
+        // Skip profile fetch if an explicit auth action is already handling state,
+        // if it's just a user update (handled locally), or during a recovery session.
+        const shouldFetchProfile =
+          (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || !user) &&
+          !isAuthActionInProgress.current &&
+          !isRecovery;
+
+        if (shouldFetchProfile) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('status')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.status && profile.status !== 'ACTIVE') {
+            console.warn("[Auth] Restricting access for status:", profile.status);
+            await supabase.auth.signOut();
+            setUser(null);
+            setLoading(false);
+            return;
+          }
         }
 
         setUser({
@@ -134,12 +158,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async (reason = null) => {
-    if (loggingOut) return { success: true };
+    if (loggingOutRef.current) return { success: true };
     
     try {
+      loggingOutRef.current = true;
       setLoggingOut(true);
       
       // Stop further inactivity checks immediately
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       if (inactivityIntervalRef.current) {
         clearInterval(inactivityIntervalRef.current);
         inactivityIntervalRef.current = null;
@@ -147,6 +176,9 @@ export function AuthProvider({ children }) {
       
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
+      // CRITICAL FIX: Remove the stale timestamp BEFORE the hard redirect.
+      localStorage.removeItem('zetverify_last_activity');
 
       // Artificial delay for better UX animation
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -161,10 +193,11 @@ export function AuthProvider({ children }) {
       return { success: true };
     } catch (error) {
       console.error("[Auth] Logout failed:", error);
+      loggingOutRef.current = false;
       setLoggingOut(false);
       return { success: false, error: error.message };
     }
-  }, [router, loggingOut]);
+  }, []);
 
   const sendResetLink = useCallback(async (email) => {
     try {
@@ -180,31 +213,64 @@ export function AuthProvider({ children }) {
 
   const updatePassword = useCallback(async (newPassword) => {
     try {
-      const { error } = await supabase.auth.updateUser({
+      isAuthActionInProgress.current = true;
+
+      // Small buffer to let any pending storage locks settle
+      await new Promise(r => setTimeout(r, 100));
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData?.session) {
+        return {
+          success: false,
+          error: "Your password reset link has expired or is invalid. Please request a new one.",
+        };
+      }
+
+      const { data, error } = await supabase.auth.updateUser({
         password: newPassword
       });
-      if (error) throw error;
+
+      if (data?.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email,
+          firstName: data.user.user_metadata?.first_name,
+          lastName: data.user.user_metadata?.last_name,
+        });
+        return { success: true };
+      }
+
+      if (error) {
+        const isLockError =
+          error.name === 'AbortError' ||
+          error.message?.toLowerCase().includes('lock broken') ||
+          error.message?.toLowerCase().includes('steal');
+
+        if (isLockError) {
+          return { success: true };
+        }
+        throw error;
+      }
+
       return { success: true };
     } catch (error) {
+      console.error("[Auth] Update password failed:", error);
       return { success: false, error: error.message };
+    } finally {
+      setTimeout(() => {
+        isAuthActionInProgress.current = false;
+      }, 500);
     }
   }, []);
 
-  // ============================================================
-  // INACTIVITY TIMEOUT LOGIC (Security Enhancement)
-  // ============================================================
   const timeoutRef = useRef(null);
   const INACTIVITY_LIMIT = 10 * 60 * 1000; // 10 minutes
 
   const resetInactivityTimer = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (user) {
-      // 1. Update localStorage for cross-tab and PWA background recovery
       localStorage.setItem('zetverify_last_activity', Date.now().toString());
-
-      // 2. Set client-side timeout for active session
       timeoutRef.current = setTimeout(() => {
-        console.log("[Auth] Session expired due to inactivity");
         logout('expired');
       }, INACTIVITY_LIMIT);
     }
@@ -212,44 +278,37 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (user) {
-      // Initial check on mount/login
       const lastActivity = localStorage.getItem('zetverify_last_activity');
       if (lastActivity && Date.now() - parseInt(lastActivity) > INACTIVITY_LIMIT) {
-        console.log("[Auth] Session expired while away");
         logout('expired');
         return;
       }
 
-      // Initial timer set
       resetInactivityTimer();
 
-      // Event listeners for activity
       const events = ["mousedown", "keydown", "scroll", "touchstart", "mousemove", "click"];
       events.forEach((event) => {
         window.addEventListener(event, resetInactivityTimer);
       });
 
-      // PWA / Mobile Background Handler: Check when user returns to app
       const handleVisibilityChange = () => {
         if (document.visibilityState === "visible") {
           const last = localStorage.getItem('zetverify_last_activity');
           if (last && Date.now() - parseInt(last) > INACTIVITY_LIMIT) {
-            console.log("[Auth] Session expired during backgrounding");
             logout('expired');
           } else {
-            resetInactivityTimer(); // Resume timer
+            resetInactivityTimer();
           }
         }
       };
       window.addEventListener("visibilitychange", handleVisibilityChange);
 
-      // Periodic check as fallback (every 30 seconds)
       inactivityIntervalRef.current = setInterval(() => {
         const last = localStorage.getItem('zetverify_last_activity');
         if (last && Date.now() - parseInt(last) > INACTIVITY_LIMIT) {
           logout('expired');
         }
-      }, 30000);
+      }, 10000);
 
       return () => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -276,6 +335,7 @@ export function AuthProvider({ children }) {
     updatePassword,
     loggingOut,
     isAuthenticated: !!user,
+    isRecoverySession,
   };
 
   return (
@@ -284,9 +344,7 @@ export function AuthProvider({ children }) {
       {loggingOut && (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/60 backdrop-blur-md animate-in fade-in duration-300">
           <div className="relative">
-            {/* Outer spinning ring */}
             <div className="w-20 h-20 rounded-full border-4 border-primary-100 border-t-primary-600 animate-spin" />
-            {/* Logo in center */}
             <div className="absolute inset-0 flex items-center justify-center">
               <img src="/ZetVerify-logo icon.png" className="w-10 h-10 object-contain animate-pulse" alt="" />
             </div>

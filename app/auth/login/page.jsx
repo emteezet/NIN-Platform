@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
@@ -8,7 +8,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 
 function LoginContent() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const logoutReason = searchParams.get("reason");
   
@@ -20,8 +20,15 @@ function LoginContent() {
     password: "",
   });
 
+  // Auth Guard: Redirect already authenticated users
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
   // Remember Me: Load email on mount
-  useState(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedEmail = localStorage.getItem('zetverify_remember_email');
       if (savedEmail) {
@@ -47,7 +54,6 @@ function LoginContent() {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      // Handle Remember Me
       if (rememberMe) {
         localStorage.setItem('zetverify_remember_email', formData.email);
       } else {
@@ -61,6 +67,8 @@ function LoginContent() {
       setLoading(false);
     }
   };
+
+  if (authLoading) return null;
 
   return (
     <div className="h-screen overflow-y-auto">
@@ -218,14 +226,18 @@ function LoginContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-lg font-medium text-white transition-all disabled:opacity-50"
+              className="w-full h-11 py-2 rounded-lg font-medium text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               style={{
                 background: loading
                   ? "rgba(25, 50, 92, 0.5)"
                   : "linear-gradient(135deg, #19325C, #24718A)",
               }}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 
