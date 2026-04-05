@@ -42,7 +42,7 @@ export class PaystackService {
                     email,
                     amount,
                     callback_url: callbackUrl,
-                    channels: ['bank_transfer', 'bank'],
+                    channels: ['bank'],
                 }),
             });
 
@@ -92,7 +92,7 @@ export class PaystackService {
             Logger.warn("[PaystackService] No secret key for signature verification. Defaulting to true for development.");
             return true;
         }
-        
+
         const crypto = require("crypto");
         const hash = crypto.createHmac('sha512', this.secretKey).update(bodyString).digest('hex');
         return hash === signature;
