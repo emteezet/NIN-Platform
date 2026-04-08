@@ -32,8 +32,7 @@ export default function BottomNav() {
     return null;
   }
 
-  // Admin routes have their own shell — hide the shared BottomNav
-  if (pathname?.startsWith('/admin')) return null;
+
 
   return (
     <nav 
