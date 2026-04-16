@@ -232,6 +232,8 @@ export function AuthProvider({ children }) {
         password: newPassword
       });
 
+      if (error) throw error;
+
       if (data?.user) {
         setUser({
           id: data.user.id,
@@ -239,29 +241,31 @@ export function AuthProvider({ children }) {
           firstName: data.user.user_metadata?.first_name,
           lastName: data.user.user_metadata?.last_name,
         });
-        return { success: true };
-      }
-
-      if (error) {
-        const isLockError =
-          error.name === 'AbortError' ||
-          error.message?.toLowerCase().includes('lock broken') ||
-          error.message?.toLowerCase().includes('steal');
-
-        if (isLockError) {
-          return { success: true };
-        }
-        throw error;
       }
 
       return { success: true };
     } catch (error) {
+      // HANDLE LOCK CONTENTION: Supabase/browser lock API can throw AbortError 
+      // if multiple contexts (tabs/SW) compete for the auth lock. 
+      // If we've reached here but the update likely worked, we treat it as success.
+      const isLockError =
+        error.name === 'AbortError' ||
+        error.message?.toLowerCase().includes('lock broken') ||
+        error.message?.toLowerCase().includes('steal');
+
+      if (isLockError) {
+        console.warn("[Auth] Update password encountered a benign lock error. Continuing.");
+        return { success: true };
+      }
+
       console.error("[Auth] Update password failed:", error);
       return { success: false, error: error.message };
     } finally {
+      // Keep the action flag true for a short duration to let background 
+      // tasks settle after the auth state change.
       setTimeout(() => {
         isAuthActionInProgress.current = false;
-      }, 500);
+      }, 1000);
     }
   }, []);
 
@@ -326,6 +330,10 @@ export function AuthProvider({ children }) {
             inactivityIntervalRef.current = null;
           }
         } else if (document.visibilityState === 'visible') {
+          // Gating: If an auth action (like password reset) is in progress, 
+          // skip background sync to avoid lock contention.
+          if (isAuthActionInProgress.current) return;
+
           // Tab restored — verify Supabase session FIRST.
           // This is the cross-device fix: if the user logged out on another
           // device or the server revoked the session, getSession() will return

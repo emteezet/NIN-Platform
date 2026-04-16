@@ -18,6 +18,12 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Bypass Service Worker for Supabase Auth and API calls to prevent lock contention
+  // and ensure fresh responses for identity/auth operations.
+  if (url.pathname.includes('/auth/v1/') || url.pathname.startsWith('/api/')) {
+    return;
+  }
+
   // Stale-While-Revalidate strategy for root and other assets
   if (ASSETS_TO_CACHE.includes(url.pathname) || ASSETS_TO_CACHE.includes('/' + url.pathname)) {
     event.respondWith(
