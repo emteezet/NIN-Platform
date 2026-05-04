@@ -41,9 +41,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          if (networkResponse.status === 200) {
+          if (networkResponse && networkResponse.status === 200) {
+            // Clone before caching, since the original response will be returned to the browser
+            const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, networkResponse.clone());
+              cache.put(request, responseToCache);
             });
           }
           return networkResponse;
@@ -56,13 +58,20 @@ self.addEventListener('fetch', (event) => {
   // Cache-first for static assets
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      return cachedResponse || fetch(request).then((networkResponse) => {
-        if (networkResponse.status === 200) {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          // Clone for cache, return original to browser
+          const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, networkResponse.clone());
+            cache.put(request, responseToCache);
           });
         }
         return networkResponse;
+      }).catch(() => {
+        // Optionally, provide a fallback for failed requests here (e.g., offline fallback page/image)
       });
     })
   );
