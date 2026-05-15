@@ -27,6 +27,17 @@ export default function HomePage() {
 
     // Helper to avoid hydration mismatch
 
+    useEffect(() => {
+  const currentVersion = "2.0.0";
+  const savedVersion = localStorage.getItem("app_version");
+
+  if (savedVersion !== currentVersion) {
+    localStorage.setItem("app_version", currentVersion);
+    // This clears the browser cache for the current page and reloads
+    window.location.reload(true); 
+  }
+}, []);
+
     return (
         <main className="h-screen overflow-y-auto bg-white text-slate-900 selection:bg-[#19325C]/20 overflow-x-hidden scroll-smooth">
             {/* Simple Navigation */}
