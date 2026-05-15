@@ -1,13 +1,20 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // Allow dev access from local network IP
-  allowedDevOrigins: ['192.168.1.6'],
-  // Allow serving uploaded images
-  images: {
-    remotePatterns: [],
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=1, stale-while-revalidate=59',
+          },
+        ],
+      },
+    ];
   },
-  // Needed for PDFKit to work in API routes
-  serverExternalPackages: ["pdfkit"],
 };
 
 export default nextConfig;
