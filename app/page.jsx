@@ -25,6 +25,18 @@ export default function HomePage() {
         setMounted(true);
     }, []);
 
+
+    useEffect(() => {
+  const currentVersion = "2.0.0";
+  const savedVersion = localStorage.getItem("app_version");
+
+  if (savedVersion !== currentVersion) {
+    localStorage.setItem("app_version", currentVersion);
+    // This clears the browser cache for the current page and reloads
+    window.location.reload(true); 
+  }
+}, []);
+
     // Helper to avoid hydration mismatch
 
     return (
