@@ -18,6 +18,7 @@ import DownloadButton from "@/components/DownloadButton";
 import PremiumPlasticCard from "@/components/PremiumPlasticCard";
 import NinRegularSlip from "@/components/NinRegularSlip";
 import ImprovedNinSlip from "@/components/ImprovedNinSlip";
+import { fetchNoCache } from "@/lib/utils/fetchNoCache";
 
 export default function HistoryPage() {
   const [records, setRecords] = useState([]);
@@ -50,7 +51,7 @@ export default function HistoryPage() {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch("/api/verifications");
+      const res = await fetchNoCache("/api/verifications");
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch history");
       setRecords(data.records);
@@ -65,7 +66,7 @@ export default function HistoryPage() {
     setLoadingId(recordId);
     setToast({ message: "Preparing your slip...", type: "loading" });
     try {
-      const res = await fetch(`/api/verifications/${recordId}`);
+      const res = await fetchNoCache(`/api/verifications/${recordId}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch details");
       setSelectedRecord(data.record);
@@ -142,7 +143,7 @@ export default function HistoryPage() {
               <button
                 onClick={() => handleDownloadClick(record.id)}
                 disabled={!!loadingId}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#19325C] text-white rounded-xl font-black text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#19325C]/10"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#19325C] text-white rounded-xl font-black text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#19325C]/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loadingId === record.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 <span className="hidden sm:inline">Download PDF</span>
